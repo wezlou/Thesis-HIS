@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "417009821457",
+    "project_id": "holy-infantschoolapp",
+    "storage_bucket": "holy-infantschoolapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:417009821457:android:f2499e150e9e630d7bceb0",
+        "android_client_info": {
+          "package_name": "com.example.holyinfantschool"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDX7H1ZwS4zjTvbpw_4ZTAf5Mg5SdXkuo0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
