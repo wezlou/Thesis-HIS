@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/storyTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Story Title"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/holo_blue_dark"
+        android:gravity="center" />
+
+    <ScrollView
+        android:id="@+id/storyScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/storyTitle"
+        android:layout_above="@+id/playButton"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/storyContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Full story goes here..."
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:lineSpacingExtra="6dp" />
+    </ScrollView>
+
+    <Button
+        android:id="@+id/playButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="▶ Listen"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:backgroundTint="@android:color/holo_blue_dark"
+        android:textColor="@android:color/white"
+        android:padding="10dp" />
+
+</RelativeLayout>
