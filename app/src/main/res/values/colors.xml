@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="primary_color">#3F51B5</color>
+    <color name="primary_dark">#303F9F</color>
+    <color name="primary_light">#C5CAE9</color>
+    <color name="black">#000000</color>
+
+    <!-- Text Colors -->
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="hint_text">#BDBDBD</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- Background Colors -->
+    <color name="light_gray_bg">#FAFAFA</color>
+    <color name="upload_bg">#F5F8FF</color>
+    <color name="edittext_bg">#FFFFFF</color>
+
+    <!-- Strokes and Dividers -->
+    <color name="divider">#E0E0E0</color>
+    <color name="card_stroke">#EEEEEE</color>
+    <color name="upload_stroke">#9E9E9E</color>
+    <color name="edittext_stroke">#BDBDBD</color>
+
+    <!-- Status Colors -->
+    <color name="error_color">#F44336</color>
+    <color name="success_color">#4CAF50</color>
+
+    <!-- Add these to your existing colors -->
+    <color name="image_icon">#FF5722</color>  <!-- Orange -->
+    <color name="video_icon">#E91E63</color>  <!-- Pink -->
+    <color name="pdf_icon">#F44336</color>    <!-- Red -->
+    <color name="default_icon">#607D8B</color><!-- Blue Grey -->
+</resources>
