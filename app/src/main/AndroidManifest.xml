@@ -189,9 +189,12 @@
             android:name=".Categorypage"
             android:exported="false" />
         <activity
+<<<<<<< HEAD
             android:name=".StoryDetailActivity"
             />
         <activity
+=======
+>>>>>>> 6f63b6750e8185cb7c19947b17e291caa98c3e7b
             android:name=".Homepage"
             android:exported="false"
             tools:ignore="MissingClass" /> <!-- MainActivity is the entry point (LAUNCHER activity) -->

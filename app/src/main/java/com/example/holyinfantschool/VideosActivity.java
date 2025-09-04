@@ -1,6 +1,7 @@
 package com.example.holyinfantschool;
 
 import android.content.Intent;
+<<<<<<< HEAD
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageView;
@@ -19,11 +20,26 @@ public class VideosActivity extends AppCompatActivity {
             "ZcX0gl-NFFg"
     };
 
+=======
+import android.graphics.Color;
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.widget.ImageView;
+import androidx.appcompat.app.AppCompatActivity;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
+
+public class VideosActivity extends AppCompatActivity {
+
+>>>>>>> 6f63b6750e8185cb7c19947b17e291caa98c3e7b
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videos);
 
+<<<<<<< HEAD
         ImageView backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(VideosActivity.this, Categorypage.class);
@@ -63,3 +79,8 @@ public class VideosActivity extends AppCompatActivity {
         startActivity(intent);
     }
 }
+=======
+
+    }
+}
+>>>>>>> 6f63b6750e8185cb7c19947b17e291caa98c3e7b
