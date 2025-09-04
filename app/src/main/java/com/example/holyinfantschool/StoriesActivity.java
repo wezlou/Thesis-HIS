@@ -2,11 +2,13 @@ package com.example.holyinfantschool;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
-import android.widget.TextView;
 
 public class StoriesActivity extends AppCompatActivity {
 
@@ -97,6 +99,29 @@ public class StoriesActivity extends AppCompatActivity {
             "One day, the colors of the rainbow argued about who was most important. Each boasted of their beauty and use. Then rain came, and they joined together to form a magnificent rainbow. They realized their differences made them stronger together. Moral: Unity in diversity."
     };
 
+    private int[] storyImages = {
+            R.drawable.tortoise_hare,
+            R.drawable.boy_wolf,
+            R.drawable.lion_mouse,
+            R.drawable.fox_grapes,
+            R.drawable.ant_grasshopper,
+            R.drawable.ugly_duckling,
+            R.drawable.three_pigs,
+            R.drawable.red_riding_hood,
+            R.drawable.goldilocks,
+            R.drawable.goose_eggs,
+            R.drawable.cinderella,
+            R.drawable.jack,
+            R.drawable.hansel_gretel,
+            R.drawable.rapunzel,
+            R.drawable.snow_white,
+            R.drawable.pinocchio,
+            R.drawable.red_hen,
+            R.drawable.fisherman_wife,
+            R.drawable.town_mouse,
+            R.drawable.rainbow_lesson
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,11 +130,11 @@ public class StoriesActivity extends AppCompatActivity {
         storyContainer = findViewById(R.id.story_container);
 
         for (int i = 0; i < storyTitles.length; i++) {
-            addStoryCard(storyTitles[i], storyContents[i], i);
+            addStoryCard(storyTitles[i], storyContents[i], storyImages[i]);
         }
     }
 
-    private void addStoryCard(String title, String content, int index) {
+    private void addStoryCard(String title, String content, int imageRes) {
         CardView card = new CardView(this);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -120,8 +145,21 @@ public class StoriesActivity extends AppCompatActivity {
         card.setRadius(20);
         card.setCardElevation(8);
         card.setCardBackgroundColor(ContextCompat.getColor(this, android.R.color.white));
-        card.setContentPadding(32, 32, 32, 32);
         card.setUseCompatPadding(true);
+
+        LinearLayout innerLayout = new LinearLayout(this);
+        innerLayout.setOrientation(LinearLayout.VERTICAL);
+
+        // Image
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(imageRes);
+        imageView.setAdjustViewBounds(true);
+        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                400
+        );
+        imageView.setLayoutParams(imageParams);
 
         // Title
         TextView titleView = new TextView(this);
@@ -129,25 +167,24 @@ public class StoriesActivity extends AppCompatActivity {
         titleView.setTextSize(20);
         titleView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_blue_dark));
 
-        // Preview (first 80 chars for better summary)
+        // Preview
         TextView previewView = new TextView(this);
         previewView.setText(content.length() > 80 ? content.substring(0, 80) + "..." : content);
         previewView.setTextSize(16);
         previewView.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray));
 
-        // Add to card
-        LinearLayout innerLayout = new LinearLayout(this);
-        innerLayout.setOrientation(LinearLayout.VERTICAL);
+        // Add views
+        innerLayout.addView(imageView);
         innerLayout.addView(titleView);
         innerLayout.addView(previewView);
-
         card.addView(innerLayout);
 
-        // Click → open StoryDetailActivity
+        // On click → open detail page
         card.setOnClickListener(v -> {
             Intent intent = new Intent(StoriesActivity.this, StoryDetailActivity.class);
             intent.putExtra("title", title);
             intent.putExtra("content", content);
+            intent.putExtra("image", imageRes);
             startActivity(intent);
         });
 
