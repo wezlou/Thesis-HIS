@@ -1,212 +1,75 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-    <!-- Add the Internet Permission here -->
-    <uses-permission android:name="android.permission.INTERNET" />
-
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
-    <!-- For Android 10+ (Scoped Storage) -->
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage" />
-
-    <application
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:largeHeap="true"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.HolyInfantSchool">
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <!--  Add the Internet Permission here  -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <!--  For Android 10+ (Scoped Storage)  -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage"/>
+    <application android:allowBackup="true" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:largeHeap="true" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.HolyInfantSchool">
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths"/>
         </provider>
-
-        <activity
-            android:name=".stdentmail"
-            android:exported="false" />
-        <activity
-            android:name=".NumberScoreActivity"
-            android:exported="false" />
-        <activity
-            android:name=".NumberTotalSplash"
-            android:exported="false" />
-        <activity
-            android:name=".NumberSplashActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Number3Activity"
-            android:exported="false" />
-        <activity
-            android:name=".Number2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".Shape3Activity"
-            android:exported="false" />
-        <activity
-            android:name=".fourthActivity"
-            android:exported="false" />
-        <activity
-            android:name=".thirdActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ShapescoreActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ShapestotalSplash"
-            android:exported="false" />
-        <activity
-            android:name=".shapesplash"
-            android:exported="false" />
-        <activity
-            android:name=".finalscorecolorsplash"
-            android:exported="false" />
-        <activity
-            android:name=".ScoreActivity"
-            android:exported="false" />
-        <activity
-            android:name=".colorscoresplash"
-            android:exported="false" />
-        <activity
-            android:name=".ResultActivity"
-            android:exported="false" />
-        <activity
-            android:name=".SplashColorActivity"
-            android:exported="false" />
-        <activity
-            android:name=".LoginAct"
-            android:exported="false" /> <!-- Activity definitions -->
-        <activity
-            android:name=".TeacherTask"
-            android:exported="false" />
-        <activity
-            android:name=".TeacherMail"
-            android:exported="false" />
-        <activity
-            android:name=".TeacherCompletedTask"
-            android:exported="false" />
-        <activity
-            android:name=".TaskCompleteSplash"
-            android:exported="false" />
-        <activity
-            android:name=".TaskSplash"
-            android:exported="false" />
-        <activity
-            android:name=".MailSplash"
-            android:exported="false" />
-        <activity
-            android:name=".loginsplash"
-            android:exported="false" />
-        <activity
-            android:name=".studenttask"
-            android:exported="false" />
-        <activity
-            android:name=".splashstudenttask"
-            android:exported="false" />
-        <activity
-            android:name=".SplashScreen"
-            android:exported="false" />
-        <activity
-            android:name=".TeacherSite"
-            android:exported="false" />
-        <activity
-            android:name=".SignupForm"
-            android:exported="false" />
-        <activity
-            android:name=".LoginForm"
-            android:exported="false" />
-        <activity
-            android:name=".storiesmain"
-            android:exported="false" />
-        <activity
-            android:name=".splashstories"
-            android:exported="false" />
-        <activity
-            android:name=".WatchVActivity"
-            android:exported="false" />
-        <activity
-            android:name=".NumberIncorrectActivity"
-            android:exported="false" />
-        <activity
-            android:name=".NumberCorrectActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Number1Activity"
-            android:exported="false" />
-        <activity
-            android:name=".Shape2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".shapeincorrect"
-            android:exported="false" />
-        <activity
-            android:name=".shapecorrect"
-            android:exported="false" />
-        <activity
-            android:name=".Shape1Activity"
-            android:exported="false" />
-        <activity
-            android:name=".secondActivity"
-            android:exported="false" />
-        <activity
-            android:name=".IncorrectActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CorrectActivity"
-            android:exported="false" />
-        <activity
-            android:name=".firstActivity"
-            android:exported="false" />
-        <activity
-            android:name=".NumberActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ShapeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ColorActivity"
-            android:exported="false" />
-        <activity
-            android:name=".QuizActivity"
-            android:exported="false" />
-        <activity
-            android:name=".VideosActivity"
-            android:exported="false" />
-        <activity
-            android:name=".StoriesActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Categorypage"
-            android:exported="false" />
-        <activity
-<<<<<<< HEAD
-            android:name=".StoryDetailActivity"
-            />
-        <activity
-=======
->>>>>>> 6f63b6750e8185cb7c19947b17e291caa98c3e7b
-            android:name=".Homepage"
-            android:exported="false"
-            tools:ignore="MissingClass" /> <!-- MainActivity is the entry point (LAUNCHER activity) -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+        <activity android:name=".stdentmail" android:exported="false"/>
+        <activity android:name=".NumberScoreActivity" android:exported="false"/>
+        <activity android:name=".NumberTotalSplash" android:exported="false"/>
+        <activity android:name=".NumberSplashActivity" android:exported="false"/>
+        <activity android:name=".Number3Activity" android:exported="false"/>
+        <activity android:name=".Number2Activity" android:exported="false"/>
+        <activity android:name=".Shape3Activity" android:exported="false"/>
+        <activity android:name=".fourthActivity" android:exported="false"/>
+        <activity android:name=".thirdActivity" android:exported="false"/>
+        <activity android:name=".ShapescoreActivity" android:exported="false"/>
+        <activity android:name=".ShapestotalSplash" android:exported="false"/>
+        <activity android:name=".shapesplash" android:exported="false"/>
+        <activity android:name=".finalscorecolorsplash" android:exported="false"/>
+        <activity android:name=".ScoreActivity" android:exported="false"/>
+        <activity android:name=".colorscoresplash" android:exported="false"/>
+        <activity android:name=".ResultActivity" android:exported="false"/>
+        <activity android:name=".SplashColorActivity" android:exported="false"/>
+        <activity android:name=".LoginAct" android:exported="false"/>
+        <!--  Activity definitions  -->
+        <activity android:name=".TeacherTask" android:exported="false"/>
+        <activity android:name=".TeacherMail" android:exported="false"/>
+        <activity android:name=".TeacherCompletedTask" android:exported="false"/>
+        <activity android:name=".TaskCompleteSplash" android:exported="false"/>
+        <activity android:name=".TaskSplash" android:exported="false"/>
+        <activity android:name=".MailSplash" android:exported="false"/>
+        <activity android:name=".loginsplash" android:exported="false"/>
+        <activity android:name=".studenttask" android:exported="false"/>
+        <activity android:name=".splashstudenttask" android:exported="false"/>
+        <activity android:name=".SplashScreen" android:exported="false"/>
+        <activity android:name=".TeacherSite" android:exported="false"/>
+        <activity android:name=".SignupForm" android:exported="false"/>
+        <activity android:name=".LoginForm" android:exported="false"/>
+        <activity android:name=".storiesmain" android:exported="false"/>
+        <activity android:name=".splashstories" android:exported="false"/>
+        <activity android:name=".WatchVActivity" android:exported="false"/>
+        <activity android:name=".NumberIncorrectActivity" android:exported="false"/>
+        <activity android:name=".NumberCorrectActivity" android:exported="false"/>
+        <activity android:name=".Number1Activity" android:exported="false"/>
+        <activity android:name=".Shape2Activity" android:exported="false"/>
+        <activity android:name=".shapeincorrect" android:exported="false"/>
+        <activity android:name=".shapecorrect" android:exported="false"/>
+        <activity android:name=".Shape1Activity" android:exported="false"/>
+        <activity android:name=".secondActivity" android:exported="false"/>
+        <activity android:name=".IncorrectActivity" android:exported="false"/>
+        <activity android:name=".CorrectActivity" android:exported="false"/>
+        <activity android:name=".firstActivity" android:exported="false"/>
+        <activity android:name=".NumberActivity" android:exported="false"/>
+        <activity android:name=".ShapeActivity" android:exported="false"/>
+        <activity android:name=".ColorActivity" android:exported="false"/>
+        <activity android:name=".QuizActivity" android:exported="false"/>
+        <activity android:name=".VideosActivity" android:exported="false"/>
+        <activity android:name=".StoriesActivity" android:exported="false"/>
+        <activity android:name=".Categorypage" android:exported="false"/>
+        <activity android:name=".StoryDetailActivity"/>
+        <activity android:name=".Homepage" android:exported="false" tools:ignore="MissingClass"/>
+        <!--  MainActivity is the entry point (LAUNCHER activity)  -->
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
     </application>
-
 </manifest>
