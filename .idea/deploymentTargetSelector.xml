@@ -4,21 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-03-09T04:11:43.266120900Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\charity\.android\avd\Pixel_3a_XL_Edited_API_30.avd" />
-            </handle>
-          </Target>
-        </DropdownSelection>
-        <DialogSelection />
       </SelectionState>
-<<<<<<< HEAD
-=======
-      <SelectionState runConfigName="Holy_infant_school">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
->>>>>>> 6f63b6750e8185cb7c19947b17e291caa98c3e7b
     </selectionStates>
   </component>
 </project>

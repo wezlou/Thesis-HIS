@@ -2,11 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-<<<<<<< HEAD
     android:id="@+id/video_view"
-=======
-    android:id="@+id/main"
->>>>>>> 6f63b6750e8185cb7c19947b17e291caa98c3e7b
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".splashstudenttask">
