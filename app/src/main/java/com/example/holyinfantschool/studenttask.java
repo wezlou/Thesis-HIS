@@ -13,18 +13,19 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 
-import java.io.File;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 public class studenttask extends AppCompatActivity {
 
     private LinearLayout assignedTasksContainer;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault());
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,39 +33,53 @@ public class studenttask extends AppCompatActivity {
         setContentView(R.layout.activity_studenttask);
 
         assignedTasksContainer = findViewById(R.id.assignedTasksContainer);
+        db = FirebaseFirestore.getInstance();
+
         loadContent();
     }
 
     private void loadContent() {
         assignedTasksContainer.removeAllViews();
 
-        // Load announcements
-        List<FileRepository.Announcement> announcements = FileRepository.getAnnouncements();
-        for (FileRepository.Announcement announcement : announcements) {
-            addAnnouncementItem(
-                    announcement.getTeacherEmail(),
-                    announcement.getAnnouncementText(),
-                    announcement.getTimestamp()
-            );
-        }
+        // 🔹 Load announcements from Firestore
+        db.collection("announcements")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String teacherEmail = doc.getString("teacherEmail");
+                        String announcementText = doc.getString("announcementText");
+                        Date timestamp = doc.getDate("timestamp");
 
-        // Load files
-        List<FileRepository.SharedFile> sharedFiles = FileRepository.getSharedFiles();
-        if (announcements.isEmpty() && sharedFiles.isEmpty()) {
-            TextView emptyView = new TextView(this);
-            emptyView.setText("No announcements or tasks yet");
-            emptyView.setTextSize(16);
-            emptyView.setPadding(16, 16, 16, 16);
-            assignedTasksContainer.addView(emptyView);
-        } else {
-            for (FileRepository.SharedFile file : sharedFiles) {
-                addTaskItem(
-                        file.getFileName(),
-                        file.getFileUri(),
-                        file.getTimestamp()
-                );
-            }
-        }
+                        addAnnouncementItem(teacherEmail, announcementText, timestamp);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load announcements", Toast.LENGTH_SHORT).show();
+                });
+
+        // 🔹 Load shared files from Firestore
+        db.collection("shared_files")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        TextView emptyView = new TextView(this);
+                        emptyView.setText("No announcements or tasks yet");
+                        emptyView.setTextSize(16);
+                        emptyView.setPadding(16, 16, 16, 16);
+                        assignedTasksContainer.addView(emptyView);
+                    } else {
+                        for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                            String fileName = doc.getString("fileName");
+                            String fileUrl = doc.getString("fileUrl");
+                            Date timestamp = doc.getDate("timestamp");
+
+                            addTaskItem(fileName, Uri.parse(fileUrl), timestamp);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load tasks", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void addAnnouncementItem(String teacherEmail, String announcementText, Date timestamp) {
@@ -77,7 +92,7 @@ public class studenttask extends AppCompatActivity {
 
         emailView.setText(teacherEmail);
         textView.setText(announcementText);
-        timeView.setText(DATE_FORMAT.format(timestamp));
+        timeView.setText(timestamp != null ? DATE_FORMAT.format(timestamp) : "No date");
 
         assignedTasksContainer.addView(announcementView);
     }
@@ -91,9 +106,9 @@ public class studenttask extends AppCompatActivity {
         ImageView iconView = taskView.findViewById(R.id.fileIcon);
 
         taskNameView.setText(fileName);
-        timeView.setText(DATE_FORMAT.format(timestamp));
+        timeView.setText(timestamp != null ? DATE_FORMAT.format(timestamp) : "No date");
 
-        // Set appropriate icon based on file type
+        // Set icon based on file type
         String mimeType = getMimeType(fileUri);
         if (mimeType != null) {
             if (mimeType.startsWith("image/")) {

@@ -32,4 +32,11 @@
     <color name="video_icon">#E91E63</color>  <!-- Pink -->
     <color name="pdf_icon">#F44336</color>    <!-- Red -->
     <color name="default_icon">#607D8B</color><!-- Blue Grey -->
+
+    <color name="teal_700">#018786</color>
+    <color name="purple_500">#9C27B0</color>
+    <color name="sky_blue">#2196F3</color>
+    <color name="apple_green">#4CAF50</color>
+    <color name="sunset_orange">#FF5722</color>
+
 </resources>

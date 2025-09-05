@@ -5,20 +5,8 @@
     android:id="@+id/video_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#5D3427"
+    android:background="@drawable/kd"
     tools:context=".Homepage">
-
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="585dp"
-        android:layout_height="953dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.346"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.494"
-        app:srcCompat="@drawable/kd" />
 
     <TextView
         android:id="@+id/textView10"
@@ -32,10 +20,9 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.588"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.111" />
+        app:layout_constraintVertical_bias="0.05" />
 
     <TextView
         android:id="@+id/textView12"
@@ -49,10 +36,9 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.591"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.151" />
+        app:layout_constraintTop_toBottomOf="@+id/textView11"
+        app:layout_constraintVertical_bias="0.0" />
 
     <TextView
         android:id="@+id/textView11"
@@ -66,10 +52,10 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.571"
+        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.127" />
+        app:layout_constraintTop_toBottomOf="@+id/textView10"
+        app:layout_constraintVertical_bias="0.0" />
 
     <ImageView
         android:id="@+id/imageView2"
@@ -77,112 +63,31 @@
         android:layout_height="77dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.101"
+        app:layout_constraintHorizontal_bias="0.048"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.063"
+        app:layout_constraintVertical_bias="0.04000002"
         app:srcCompat="@drawable/kl" />
 
-    <ImageView
-        android:id="@+id/play1"
-        android:layout_width="258dp"
-        android:layout_height="94dp"
-        android:clickable="true"
-        android:contentDescription="Play button"
-        android:focusable="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.495"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.418"
-        app:srcCompat="@drawable/img_10" />
-
-    <ImageView
-        android:id="@+id/imageView6"
-        android:layout_width="164dp"
-        android:layout_height="291dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.736"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
-        app:srcCompat="@drawable/img_11" />
-
-    <ImageView
-        android:id="@+id/imageView7"
-        android:layout_width="136dp"
-        android:layout_height="310dp"
-        android:layout_marginStart="284dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
-        app:srcCompat="@drawable/img_12" />
+    <!-- Wooden sign background -->
 
     <ImageView
         android:id="@+id/imageView9"
         android:layout_width="92dp"
         android:layout_height="88dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:rotationY="180"
+        app:layout_constraintBottom_toTopOf="@+id/play1"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.602"
+        app:layout_constraintHorizontal_bias="0.2"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.32"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2"
+        app:layout_constraintVertical_bias="0.961"
         app:srcCompat="@drawable/img_8" />
 
     <ImageView
-        android:id="@+id/login"
-        android:layout_width="261dp"
-        android:layout_height="97dp"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.502"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.542"
-        app:srcCompat="@drawable/lgbtn"
-        tools:ignore="MissingConstraints" />
-
-    <TextView
-        android:id="@+id/pleaseWaitText5"
-        android:layout_width="137dp"
-        android:layout_height="27dp"
-        android:layout_marginTop="232dp"
-        android:text="LOG-IN/SIGN-UP"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.352" />
-
-    <TextView
-        android:id="@+id/pleaseWaitText2"
-        android:layout_width="100dp"
-        android:layout_height="29dp"
-        android:layout_marginTop="232dp"
-        android:text="For Teacher's Only"
-        android:textColor="@android:color/background_dark"
-        android:textSize="10sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.384" />
-
-    <ImageView
-        android:id="@+id/imageView8"
-        android:layout_width="222dp"
-        android:layout_height="321dp"
+        android:id="@+id/woodSign"
+        android:layout_width="235dp"
+        android:layout_height="421dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -192,69 +97,117 @@
         app:srcCompat="@drawable/img_13" />
 
     <ImageView
-        android:id="@+id/imageView98"
-        android:layout_width="39dp"
-        android:layout_height="49dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.646"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.536"
-        app:srcCompat="@drawable/img_66" />
-
-    <ImageView
         android:id="@+id/imageView99"
         android:layout_width="83dp"
         android:layout_height="66dp"
+        android:rotation="0"
+        android:rotationY="180"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintHorizontal_bias="0.048"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
+        app:layout_constraintVertical_bias="0.98"
         app:srcCompat="@drawable/img_54" />
 
     <ImageView
-        android:id="@+id/imageView97"
-        android:layout_width="37dp"
-        android:layout_height="23dp"
+        android:id="@+id/teachersetting"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.645"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintHorizontal_bias="0.94"
+        app:layout_constraintStart_toEndOf="@+id/imageView2"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.533"
-        app:srcCompat="@drawable/img_67" />
-
-
-    <ImageView
-        android:id="@+id/teachersetting"
-        android:layout_width="103dp"
-        android:layout_height="96dp"
-        android:layout_marginStart="336dp"
-        android:layout_marginTop="40dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.050000012"
         app:srcCompat="@drawable/settingg" />
 
     <ImageView
         android:id="@+id/volumeOn"
         android:layout_width="67dp"
         android:layout_height="42dp"
-        android:layout_marginBottom="672dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/teachersetting"
+        app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/om" />
 
     <ImageView
         android:id="@+id/volumeOff"
         android:layout_width="67dp"
         android:layout_height="42dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="4dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/volumeOn"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/volumeOn"
         app:srcCompat="@drawable/mute" />
+
+    <Button
+        android:id="@+id/play1"
+        android:layout_width="208dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="60dp"
+        android:background="@android:color/transparent"
+        android:fontFamily="@font/luckiestguy"
+        android:rotation="-4"
+        android:text="START"
+        android:textColor="@android:color/white"
+        android:textSize="34sp"
+        android:textStyle="bold|italic"
+        app:layout_constraintBottom_toTopOf="@+id/login"
+        app:layout_constraintEnd_toEndOf="@id/woodSign"
+        app:layout_constraintHorizontal_bias="0.666"
+        app:layout_constraintStart_toStartOf="@id/woodSign"
+        app:layout_constraintTop_toTopOf="@id/woodSign"
+        app:layout_constraintVertical_bias="0.041" />
+
+    <Button
+        android:id="@+id/login"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="16dp"
+        android:background="@android:color/transparent"
+        android:fontFamily="@font/luckiestguy"
+        android:rotation="4"
+        android:text="LOGIN"
+        android:textColor="@android:color/white"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/exit"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/woodSign"
+        app:layout_constraintTop_toTopOf="@id/woodSign"
+        app:layout_constraintVertical_bias="0.866" />
+
+    <Button
+        android:id="@+id/exit"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="200dp"
+        android:background="@android:color/transparent"
+        android:fontFamily="@font/luckiestguy"
+        android:text="EXIT"
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="@id/woodSign"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/woodSign"
+        app:layout_constraintTop_toTopOf="@id/woodSign" />
+
+    <ImageView
+        android:id="@+id/imageView6"
+        android:layout_width="164dp"
+        android:layout_height="291dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
+        app:srcCompat="@drawable/img_11" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,80 +1,96 @@
 package com.example.holyinfantschool;
 
 import android.net.Uri;
-import java.util.ArrayList;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FileRepository {
-    private static final List<SharedFile> sharedFiles = new ArrayList<>();
-    private static final List<Announcement> announcements = new ArrayList<>();
 
-    public static void addSharedFile(String fileName, Uri fileUri) {
-        removeSharedFile(fileName);
-        sharedFiles.add(new SharedFile(fileName, fileUri, new Date()));
-    }
+    private static final String TAG = "FileRepository";
+    private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private static final FirebaseStorage storage = FirebaseStorage.getInstance();
 
-    public static void removeSharedFile(String fileName) {
-        sharedFiles.removeIf(file -> file.getFileName().equals(fileName));
-    }
-
-    public static List<SharedFile> getSharedFiles() {
-        return new ArrayList<>(sharedFiles);
-    }
-
+    /**
+     * Save an announcement to Firestore
+     *
+     */
     public static void addAnnouncement(String teacherEmail, String announcementText) {
-        announcements.add(new Announcement(teacherEmail, announcementText, new Date()));
+        Map<String, Object> announcement = new HashMap<>();
+        announcement.put("teacherEmail", teacherEmail);
+        announcement.put("announcementText", announcementText);
+        announcement.put("timestamp", new Date());
+
+        db.collection("announcements")
+                .add(announcement)
+                .addOnSuccessListener(documentReference ->
+                        Log.d(TAG, "Announcement saved with ID: " + documentReference.getId()))
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Error saving announcement", e));
     }
 
-    public static List<Announcement> getAnnouncements() {
-        return new ArrayList<>(announcements);
+    /**
+     * Upload file to Firebase Storage and save reference in Firestore
+     */
+    public static void addSharedFile(String fileName, Uri fileUri) {
+        StorageReference storageRef = storage.getReference()
+                .child("shared_files/" + fileName);
+
+        UploadTask uploadTask = storageRef.putFile(fileUri);
+
+        uploadTask.addOnSuccessListener(taskSnapshot ->
+                storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                    // Save file info in Firestore
+                    Map<String, Object> fileData = new HashMap<>();
+                    fileData.put("fileName", fileName);
+                    fileData.put("fileUrl", uri.toString());
+                    fileData.put("timestamp", new Date());
+
+                    db.collection("shared_files")
+                            .add(fileData)
+                            .addOnSuccessListener(documentReference ->
+                                    Log.d(TAG, "File info saved with ID: " + documentReference.getId()))
+                            .addOnFailureListener(e ->
+                                    Log.e(TAG, "Error saving file info", e));
+                })
+        ).addOnFailureListener(e ->
+                Log.e(TAG, "File upload failed", e));
     }
 
-    public static class SharedFile {
-        private final String fileName;
-        private final Uri fileUri;
-        private final Date timestamp;
+    /**
+     * Delete file from Firebase Storage and Firestore
+     */
+    public static void removeSharedFile(String fileName) {
+        StorageReference fileRef = storage.getReference().child("shared_files/" + fileName);
 
-        public SharedFile(String fileName, Uri fileUri, Date timestamp) {
-            this.fileName = fileName;
-            this.fileUri = fileUri;
-            this.timestamp = timestamp;
-        }
+        // Delete from Storage
+        fileRef.delete()
+                .addOnSuccessListener(aVoid ->
+                        Log.d(TAG, "File deleted from Storage: " + fileName))
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Error deleting file from Storage", e));
 
-        public String getFileName() {
-            return fileName;
-        }
-
-        public Uri getFileUri() {
-            return fileUri;
-        }
-
-        public Date getTimestamp() {
-            return timestamp;
-        }
-    }
-
-    public static class Announcement {
-        private final String teacherEmail;
-        private final String announcementText;
-        private final Date timestamp;
-
-        public Announcement(String teacherEmail, String announcementText, Date timestamp) {
-            this.teacherEmail = teacherEmail;
-            this.announcementText = announcementText;
-            this.timestamp = timestamp;
-        }
-
-        public String getTeacherEmail() {
-            return teacherEmail;
-        }
-
-        public String getAnnouncementText() {
-            return announcementText;
-        }
-
-        public Date getTimestamp() {
-            return timestamp;
-        }
+        // Delete metadata from Firestore
+        db.collection("shared_files")
+                .whereEqualTo("fileName", fileName)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    queryDocumentSnapshots.getDocuments().forEach(doc ->
+                            db.collection("shared_files").document(doc.getId()).delete());
+                })
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Error deleting file info from Firestore", e));
     }
 }
