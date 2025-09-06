@@ -13,34 +13,36 @@
         android:id="@+id/imageView5"
         android:layout_width="236dp"
         android:layout_height="262dp"
-        android:layout_marginEnd="216dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="180dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.915"
         app:srcCompat="@drawable/img_30" />
 
     <ImageView
         android:id="@+id/stbtn2"
-        android:layout_width="167dp"
-        android:layout_height="122dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_width="150dp"
+        android:layout_height="120dp"
+        app:layout_constraintBottom_toBottomOf="@+id/imageView5"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.061"
+        app:layout_constraintHorizontal_bias="0.09"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.803"
+        app:layout_constraintTop_toTopOf="@+id/imageView5"
+        app:layout_constraintVertical_bias="0.25"
         app:srcCompat="@drawable/img_10" />
 
     <ImageView
         android:id="@+id/imageView11"
-        android:layout_width="268dp"
-        android:layout_height="191dp"
+        android:layout_width="220dp"
+        android:layout_height="180dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.711"
+        app:layout_constraintHorizontal_bias="0.757"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.975"
+        app:layout_constraintVertical_bias="1.0"
         app:srcCompat="@drawable/img_27" />
 </androidx.constraintlayout.widget.ConstraintLayout>
