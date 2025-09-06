@@ -1,26 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
     android:background="@color/light_gray_bg"
     tools:context=".TeacherTask">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+    <!-- Back Button fixed at top -->
+    <ImageView
+        android:id="@+id/backToTeacherSite"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Back to Teacher Site"
+        android:tint="?android:attr/colorMultiSelectHighlight"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/img_15" />
 
-        <!-- Header Section -->
+    <!-- Scrollable content -->
+    <ScrollView
+        android:id="@+id/scrollContent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/backToTeacherSite"
+        app:layout_constraintBottom_toTopOf="@id/postAnnouncementBtn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="16dp">
+            android:padding="16dp">
 
+            <!-- Header -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -37,125 +54,139 @@
                 android:text="Post announcements and share files with students"
                 android:textSize="14sp"
                 android:textColor="@color/secondary_text"
-                android:gravity="center"/>
-        </LinearLayout>
-
-        <!-- Announcement Input Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Announcement Text"
-                android:textSize="16sp"
-                android:textColor="@color/primary_text"
-                android:paddingBottom="8dp"/>
-
-            <EditText
-                android:id="@+id/announcementInput"
-                android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:hint="Type your announcement here..."
-                android:inputType="textMultiLine"
-                android:background="@drawable/edittext_background"
-                android:padding="12dp"
-                android:textColor="@color/primary_text"
-                android:textColorHint="@color/hint_text"
-                android:textSize="14sp"/>
-        </LinearLayout>
-
-        <!-- Post Button -->
-        <Button
-            android:id="@+id/postAnnouncementBtn"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="24dp"
-            android:text="Post Announcement"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textAllCaps="false"
-            android:background="@drawable/button_primary"
-            android:stateListAnimator="@null"
-            android:elevation="4dp"/>
-
-        <!-- File Upload Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Attach Files"
-                android:textSize="16sp"
-                android:textColor="@color/primary_text"
+                android:gravity="center"
                 android:paddingBottom="16dp"/>
 
-            <!-- Upload Button -->
-            <LinearLayout
-                android:id="@+id/uploadContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:background="@drawable/upload_button_bg"
-                android:padding="24dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:id="@+id/uploadBtn"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_upload"
-                    android:tint="@color/hint_text" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Tap to upload files"
-                    android:textSize="14sp"
-                    android:textColor="@color/secondary_text"/>
-            </LinearLayout>
-
-            <!-- Uploaded Files Section -->
+            <!-- Announcement Title -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="16dp">
+                android:background="@drawable/card_background"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Attached Files"
+                    android:text="Title"
                     android:textSize="16sp"
                     android:textColor="@color/primary_text"
                     android:paddingBottom="8dp"/>
 
-                <View
+                <EditText
+                    android:id="@+id/announcementTitleInput"
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider"
-                    android:layout_marginBottom="12dp"/>
+                    android:layout_height="50dp"
+                    android:hint="Enter title here..."
+                    android:inputType="text"
+                    android:background="@drawable/edittext_background"
+                    android:padding="12dp"
+                    android:textColor="@color/primary_text"
+                    android:textColorHint="@color/hint_text"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <!-- Announcement Content -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_background"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Content"
+                    android:textSize="16sp"
+                    android:textColor="@color/primary_text"
+                    android:paddingBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/announcementContentInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="150dp"
+                    android:hint="Type your announcement here..."
+                    android:inputType="textMultiLine"
+                    android:background="@drawable/edittext_background"
+                    android:padding="12dp"
+                    android:textColor="@color/primary_text"
+                    android:textColorHint="@color/hint_text"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <!-- File Upload Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_background"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Attach Files"
+                    android:textSize="16sp"
+                    android:textColor="@color/primary_text"
+                    android:paddingBottom="16dp"/>
+
+                <LinearLayout
+                    android:id="@+id/uploadContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/upload_button_bg"
+                    android:padding="24dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/uploadBtn"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_upload"
+                        android:tint="@color/hint_text" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Tap to upload files"
+                        android:textSize="14sp"
+                        android:textColor="@color/secondary_text"/>
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/uploadedFilesContainer"
                     android:layout_width="match_parent"
-                    android:layout_height="79dp"
+                    android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="4dp" />
+                    android:layout_marginTop="16dp"
+                    android:padding="4dp"/>
             </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+
+    <!-- Post Announcement Button fixed at bottom -->
+    <Button
+        android:id="@+id/postAnnouncementBtn"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="Post Announcement"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textAllCaps="false"
+        android:background="@drawable/button_primary"
+        android:stateListAnimator="@null"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

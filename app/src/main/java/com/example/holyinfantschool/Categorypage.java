@@ -5,93 +5,105 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class Categorypage extends AppCompatActivity {
-
     private MediaPlayer mediaPlayer;
-    private boolean isMusicPlaying = true;
+    private boolean isMuted = false;
+    private ImageView volumeOn, volumeOff;
+    private boolean settingsVisible = false; // toggle state
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_categorypage);
 
+        ImageView backTeacher = findViewById(R.id.backteacher); // arrow icon
+        ImageView teacherSetting = findViewById(R.id.teachersetting);
+        volumeOn = findViewById(R.id.volumeOn);
+        volumeOff = findViewById(R.id.volumeOff);
 
-        ImageView backTeacher = findViewById(R.id.backteacher);
+        hideSettingsButtons();
 
-        mediaPlayer = MediaPlayer.create(this, R.raw.background_music); // Background music
+        mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // STORY - Go to StoriesActivity
-        ImageView story = findViewById(R.id.story);
-        story.setOnClickListener(v -> {
-            Intent intent = new Intent(Categorypage.this, splashstories.class);
+        backTeacher.setOnClickListener(v -> {
+            if (mediaPlayer != null) {
+                mediaPlayer.stop();
+                mediaPlayer.release();
+                mediaPlayer = null;
+            }
+            Intent intent = new Intent(Categorypage.this, Homepage.class);
             startActivity(intent);
+            finish();
         });
 
-        // WATCH VIDEOS - Go to VideosActivity
-        ImageView watchVideos = findViewById(R.id.wv);
-        watchVideos.setOnClickListener(v -> {
-            Intent intent = new Intent(Categorypage.this, VideosActivity.class);
-            startActivity(intent);
+        teacherSetting.setOnClickListener(v -> {
+            if (settingsVisible) {
+                hideSettingsButtons();
+            } else {
+                showSettingsButtons();
+            }
+            settingsVisible = !settingsVisible;
         });
 
-        // Pencil - Go to QuizActivity
-        ImageView pencil = findViewById(R.id.pencil);
-        pencil.setOnClickListener(v -> {
-            Intent intent = new Intent(Categorypage.this, QuizActivity.class);
-            startActivity(intent);
-        });
-
-        // TASK - Go to splashstudenttask
-        ImageView task = findViewById(R.id.task);
-        task.setOnClickListener(v -> {
-            Intent intent = new Intent(Categorypage.this, splashstudenttask.class);
-            startActivity(intent);
-        });
-
-        
-
-        // SETTINGS (teachersetting) - Toggle volume on/off
-        ImageView teachersetting = findViewById(R.id.teachersetting);
-        ImageView volumeOn = findViewById(R.id.volumeOn);
-        ImageView volumeOff = findViewById(R.id.volumeOff);
-
-        // Initially hide the volume buttons
-        volumeOn.setVisibility(ImageView.INVISIBLE);
-        volumeOff.setVisibility(ImageView.INVISIBLE);
-
-        teachersetting.setOnClickListener(v -> {
-            volumeOn.setVisibility(volumeOn.getVisibility() == ImageView.VISIBLE ? ImageView.GONE : ImageView.VISIBLE);
-            volumeOff.setVisibility(volumeOff.getVisibility() == ImageView.VISIBLE ? ImageView.GONE : ImageView.VISIBLE);
-        });
-
-        // Volume ON - Turn music on
         volumeOn.setOnClickListener(v -> {
-            if (!isMusicPlaying) {
-                mediaPlayer.start();
-                isMusicPlaying = true;
-            }
+            mediaPlayer.setVolume(0, 0);
+            isMuted = true;
+            updateVolumeButtonsVisibility();
         });
 
-        // Volume OFF - Turn music off
         volumeOff.setOnClickListener(v -> {
-            if (isMusicPlaying) {
-                mediaPlayer.pause();
-                isMusicPlaying = false;
-            }
+            mediaPlayer.setVolume(1.0f, 1.0f);
+            isMuted = false;
+            updateVolumeButtonsVisibility();
         });
+    }
+
+    private void hideSettingsButtons() {
+        volumeOn.setVisibility(View.GONE);
+        volumeOff.setVisibility(View.GONE);
+    }
+
+    private void showSettingsButtons() {
+        updateVolumeButtonsVisibility();
+    }
+
+    private void updateVolumeButtonsVisibility() {
+        if (isMuted) {
+            volumeOff.setVisibility(View.VISIBLE);
+            volumeOn.setVisibility(View.GONE);
+        } else {
+            volumeOn.setVisibility(View.VISIBLE);
+            volumeOff.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mediaPlayer != null && !isMuted && !mediaPlayer.isPlaying()) {
+            mediaPlayer.start();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (mediaPlayer != null) {
-            mediaPlayer.release(); // Release the media player when the activity is destroyed
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
     }
 }
