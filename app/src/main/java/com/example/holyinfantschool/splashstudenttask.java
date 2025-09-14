@@ -4,12 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.widget.ProgressBar;
+import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 public class splashstudenttask extends AppCompatActivity {
 
-    private static final int SPLASH_TIME_OUT = 4000; // 4 seconds
+    private static final int SPLASH_TIME_OUT = 4000;
     private ProgressBar progressBar;
+    private TextView loadingText;
+
+    private Handler handler = new Handler();
+    private String[] messages = {"Loading...", "Almost there...", "Preparing Task..."};
+    private int messageIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,13 +24,29 @@ public class splashstudenttask extends AppCompatActivity {
         setContentView(R.layout.activity_splashstudenttask);
 
         progressBar = findViewById(R.id.progressBar);
-        progressBar.setIndeterminate(true); // Make the progress bar spin continuously
+        progressBar.setIndeterminate(true);
+
+        loadingText = findViewById(R.id.loadingText);
+
+        handler.post(updateTextRunnable);
 
         new Handler().postDelayed(() -> {
-            // Go to studenttask activity after 4 seconds
+            handler.removeCallbacks(updateTextRunnable);
+
             Intent intent = new Intent(splashstudenttask.this, studenttask.class);
             startActivity(intent);
-            finish(); // Finish splash screen activity
+            finish();
         }, SPLASH_TIME_OUT);
     }
+
+    private Runnable updateTextRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (loadingText != null) {
+                loadingText.setText(messages[messageIndex]);
+                messageIndex = (messageIndex + 1) % messages.length;
+                handler.postDelayed(this, 1500);
+            }
+        }
+    };
 }
