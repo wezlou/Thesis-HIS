@@ -3,6 +3,7 @@ package com.example.holyinfantschool;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -19,12 +20,15 @@ public class CorrectActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_correct);
 
-        ImageView appleImage = findViewById(R.id.appleImage);
+        ImageView resultImage = findViewById(R.id.appleImage);
         ProgressBar progressBar = findViewById(R.id.progressBar);
 
         int imageRes = getIntent().getIntExtra("IMAGE_RES", -1);
+        int colorRes = getIntent().getIntExtra("COLOR_RES", android.R.color.black);
+
         if (imageRes != -1) {
-            appleImage.setImageResource(imageRes);
+            resultImage.setImageResource(imageRes);
+            resultImage.setColorFilter(getResources().getColor(colorRes), PorterDuff.Mode.SRC_ATOP);
         }
 
         progressBar.setMax(100);
@@ -41,7 +45,6 @@ public class CorrectActivity extends AppCompatActivity {
         });
         animator.start();
 
-        // Allow skipping by tapping anywhere
         findViewById(android.R.id.content).setOnClickListener(v -> {
             animator.cancel();
             navigateNext();
@@ -65,4 +68,3 @@ public class CorrectActivity extends AppCompatActivity {
         }
     }
 }
-

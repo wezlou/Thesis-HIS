@@ -1,6 +1,7 @@
 package com.example.holyinfantschool;
 
 import android.content.Intent;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -72,27 +73,77 @@ public class firstActivity extends AppCompatActivity {
         levelText.setText("LEVEL " + (currentIndex + 1));
         questionText.setText(q.getText());
         artImage.setImageResource(q.getImageRes());
+        artImage.clearColorFilter();
 
         // Clear old choices
         choicesLayout.removeAllViews();
 
-        for (Question.Answer ans : q.getAnswers()) {
+        for (int i = 0; i < q.getAnswers().size(); i++) {
+            Question.Answer ans = q.getAnswers().get(i);
             ImageView btn = new ImageView(this);
-            btn.setLayoutParams(new LinearLayout.LayoutParams(220, 220));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(220, 220);
+            params.setMargins(16, 16, 16, 16);
+            btn.setLayoutParams(params);
             btn.setPadding(16, 16, 16, 16);
             btn.setImageResource(ans.getImageRes());
 
             btn.setOnClickListener(v -> {
+                if (ans.isCorrect()) {
+                    btn.setBackgroundResource(R.drawable.answer_outline_correct);
+                    btn.setColorFilter(getResources().getColor(getColorFromRes(ans.getImageRes())),
+                            PorterDuff.Mode.SRC_ATOP);
+
+                    artImage.setColorFilter(getResources().getColor(getColorFromRes(ans.getImageRes())),
+                            PorterDuff.Mode.SRC_ATOP);
+                } else {
+                    btn.setBackgroundResource(R.drawable.answer_outline_wrong);
+                    btn.setColorFilter(getResources().getColor(getColorFromRes(ans.getImageRes())),
+                            PorterDuff.Mode.SRC_ATOP);
+
+                    for (int j = 0; j < choicesLayout.getChildCount(); j++) {
+                        Question.Answer checkAns = q.getAnswers().get(j);
+                        if (checkAns.isCorrect() && choicesLayout.getChildAt(j) instanceof ImageView) {
+                            ImageView correctBtn = (ImageView) choicesLayout.getChildAt(j);
+                            correctBtn.setBackgroundResource(R.drawable.answer_outline_correct);
+                        }
+                    }
+                }
+
+                // ✅ Pass both outline + color to result
                 GameFlowController.navigateToResult(
                         firstActivity.this,
                         ans.isCorrect(),
-                        q.getImageRes(),
+                        q.getImageRes(),                           // outline image
+                        getColorFromRes(ans.getImageRes()),        // fill color
                         "firstActivity",
                         currentIndex + 1
                 );
             });
 
             choicesLayout.addView(btn);
+        }
+    }
+
+    // Map button image resources to actual Android colors
+    private int getColorFromRes(int resId) {
+        if (resId == R.drawable.img_34) {
+            return android.R.color.holo_red_dark; // red
+        } else if (resId == R.drawable.img_38) {
+            return android.R.color.holo_blue_dark; // blue
+        } else if (resId == R.drawable.btnmango) {
+            return R.color.bananaYellow; // yellow
+        } else if (resId == R.drawable.img_33) {
+            return android.R.color.holo_purple; // pink
+        } else if (resId == R.drawable.img_66) {
+            return android.R.color.holo_green_dark; // green
+        } else if (resId == R.drawable.purplebtn) {
+            return android.R.color.holo_purple; // purple
+        } else if (resId == R.drawable.orangebtn) {
+            return android.R.color.holo_orange_dark; // orange
+        } else if (resId == R.drawable.brownbtn) {
+            return R.color.brownColor; // custom brown
+        } else {
+            return android.R.color.black; // default
         }
     }
 }

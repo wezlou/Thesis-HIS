@@ -8,6 +8,7 @@ public class GameFlowController {
     public static void navigateToResult(Activity currentActivity,
                                         boolean isCorrect,
                                         int imageRes,
+                                        int colorRes,       // NEW: pass color
                                         String nextActivity,
                                         int nextIndex) {
 
@@ -19,8 +20,11 @@ public class GameFlowController {
         }
 
         // Show Correct or Incorrect activity
-        Intent intent = new Intent(currentActivity, isCorrect ? CorrectActivity.class : IncorrectActivity.class);
+        Intent intent = new Intent(currentActivity,
+                isCorrect ? CorrectActivity.class : IncorrectActivity.class);
+
         intent.putExtra("IMAGE_RES", imageRes);
+        intent.putExtra("COLOR_RES", colorRes);   // send color too
         intent.putExtra("NEXT_ACTIVITY", nextActivity);
         intent.putExtra("NEXT_INDEX", nextIndex);
         currentActivity.startActivity(intent);

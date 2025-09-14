@@ -39,6 +39,12 @@
     <color name="apple_green">#4CAF50</color>
     <color name="sunset_orange">#FF5722</color>
     <color name="purple_700">#512DA8</color>
+    <color name="appleRed">#FF0000</color>
+    <color name="grapePurple">#800080</color>
+    <color name="orangeOrange">#FFA500</color>
+    <color name="watermelonGreen">#228B22</color>
+    <color name="bananaYellow">#FFE135</color>
+    <color name="brownColor">#8B4513</color>
 
 
 </resources>
