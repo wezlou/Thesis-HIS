@@ -2,13 +2,16 @@ package com.example.holyinfantschool;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Handler;
 
 public class GameFlowController {
-    private static final int DELAY_BEFORE_SPLASH = 3000;
-    private static final int SPLASH_DURATION = 3000;
 
-    public static void navigateToResult(Activity currentActivity, boolean isCorrect, int imageRes, String nextActivity) {
+    public static void navigateToResult(Activity currentActivity,
+                                        boolean isCorrect,
+                                        int imageRes,
+                                        int colorRes,       // NEW: pass color
+                                        String nextActivity,
+                                        int nextIndex) {
+
         // Update score
         if (isCorrect) {
             GameScore.incrementCorrect();
@@ -16,17 +19,17 @@ public class GameFlowController {
             GameScore.incrementIncorrect();
         }
 
-        // Go to Correct/Incorrect activity
-        Intent intent = new Intent(currentActivity, isCorrect ? CorrectActivity.class : IncorrectActivity.class);
-        intent.putExtra("IMAGE_RES", imageRes);
-        currentActivity.startActivity(intent);
-        currentActivity.finish();
+        // Show Correct or Incorrect activity
+        Intent intent = new Intent(currentActivity,
+                isCorrect ? CorrectActivity.class : IncorrectActivity.class);
 
-        // After delay, go to splash then next activity
-        new Handler().postDelayed(() -> {
-            Intent splashIntent = new Intent(currentActivity, SplashColorActivity.class);
-            splashIntent.putExtra("NEXT_ACTIVITY", nextActivity);
-            currentActivity.startActivity(splashIntent);
-        }, DELAY_BEFORE_SPLASH);
+        intent.putExtra("IMAGE_RES", imageRes);
+        intent.putExtra("COLOR_RES", colorRes);   // send color too
+        intent.putExtra("NEXT_ACTIVITY", nextActivity);
+        intent.putExtra("NEXT_INDEX", nextIndex);
+        currentActivity.startActivity(intent);
+
+        // Finish current question screen immediately
+        currentActivity.finish();
     }
 }

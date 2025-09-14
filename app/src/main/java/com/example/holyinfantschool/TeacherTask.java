@@ -34,9 +34,11 @@ public class TeacherTask extends AppCompatActivity {
     private static final int STORAGE_PERMISSION_CODE = 100;
     private static final int PICK_FILE_REQUEST_CODE = 101;
 
-    private EditText announcementInput;
+    private EditText announcementTitleInput;
+    private EditText announcementContentInput;
     private Button postAnnouncementBtn;
     private ImageView uploadBtn;
+    private ImageView backToTeacherSite;
     private LinearLayout uploadedFilesContainer;
     private Map<String, Uri> uploadedFilesMap = new HashMap<>();
 
@@ -44,20 +46,56 @@ public class TeacherTask extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_teacher_task);
+
         initializeViews();
         setupClickListeners();
     }
 
     private void initializeViews() {
-        announcementInput = findViewById(R.id.announcementInput);
+        announcementTitleInput = findViewById(R.id.announcementTitleInput);
+        announcementContentInput = findViewById(R.id.announcementContentInput);
         postAnnouncementBtn = findViewById(R.id.postAnnouncementBtn);
         uploadBtn = findViewById(R.id.uploadBtn);
         uploadedFilesContainer = findViewById(R.id.uploadedFilesContainer);
+        backToTeacherSite = findViewById(R.id.backToTeacherSite);
     }
 
     private void setupClickListeners() {
         uploadBtn.setOnClickListener(v -> checkStoragePermission());
         postAnnouncementBtn.setOnClickListener(v -> postAnnouncement());
+
+        backToTeacherSite.setOnClickListener(v -> {
+            startActivity(new Intent(TeacherTask.this, TeacherSite.class));
+            finish();
+        });
+    }
+
+    private void postAnnouncement() {
+        String title = announcementTitleInput.getText().toString().trim();
+        String content = announcementContentInput.getText().toString().trim();
+
+        if (title.isEmpty()) {
+            Toast.makeText(this, "Please enter a title", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String teacherEmail = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+
+        FileRepository.addAnnouncement(teacherEmail, title, content, announcementId -> {
+            if (!uploadedFilesMap.isEmpty()) {
+                for (Map.Entry<String, Uri> entry : uploadedFilesMap.entrySet()) {
+                    FileRepository.addSharedFile(announcementId, entry.getKey(), entry.getValue());
+                }
+                Toast.makeText(this, "Announcement and files shared!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Announcement posted!", Toast.LENGTH_SHORT).show();
+            }
+
+            announcementTitleInput.setText("");
+            announcementContentInput.setText("");
+            uploadedFilesMap.clear();
+            uploadedFilesContainer.removeAllViews();
+        });
     }
 
     private void checkStoragePermission() {
@@ -89,29 +127,6 @@ public class TeacherTask extends AppCompatActivity {
         startActivityForResult(intent, PICK_FILE_REQUEST_CODE);
     }
 
-    private void postAnnouncement() {
-        String announcement = announcementInput.getText().toString().trim();
-        if (!announcement.isEmpty()) {
-            // Get the currently logged in teacher's email from Firebase
-            String teacherEmail = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-
-            // Save announcement
-            FileRepository.addAnnouncement(teacherEmail, announcement);
-
-            if (!uploadedFilesMap.isEmpty()) {
-                for (Map.Entry<String, Uri> entry : uploadedFilesMap.entrySet()) {
-                    FileRepository.addSharedFile(entry.getKey(), entry.getValue());
-                }
-                Toast.makeText(this, "Announcement and files shared with students!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Announcement posted!", Toast.LENGTH_SHORT).show();
-            }
-            announcementInput.setText("");
-        } else {
-            Toast.makeText(this, "Please write an announcement first", Toast.LENGTH_SHORT).show();
-        }
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -122,7 +137,6 @@ public class TeacherTask extends AppCompatActivity {
                 if (!uploadedFilesMap.containsKey(fileName)) {
                     uploadedFilesMap.put(fileName, fileUri);
                     addFileToUploadsList(fileName, fileUri);
-                    Toast.makeText(this, fileName + " added", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, fileName + " already exists", Toast.LENGTH_SHORT).show();
                 }
@@ -132,7 +146,7 @@ public class TeacherTask extends AppCompatActivity {
 
     private String getFileName(Uri uri) {
         String result = null;
-        if (uri.getScheme().equals("content")) {
+        if ("content".equals(uri.getScheme())) {
             try (android.database.Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
                 if (cursor != null && cursor.moveToFirst()) {
                     result = cursor.getString(cursor.getColumnIndexOrThrow("_display_name"));
@@ -142,16 +156,13 @@ public class TeacherTask extends AppCompatActivity {
         if (result == null) {
             result = uri.getPath();
             int cut = result.lastIndexOf('/');
-            if (cut != -1) {
-                result = result.substring(cut + 1);
-            }
+            if (cut != -1) result = result.substring(cut + 1);
         }
         return result;
     }
 
     private void addFileToUploadsList(String fileName, Uri fileUri) {
         View fileItemView = LayoutInflater.from(this).inflate(R.layout.item_uploaded_file, uploadedFilesContainer, false);
-
         TextView fileNameView = fileItemView.findViewById(R.id.fileName);
         ImageView deleteBtn = fileItemView.findViewById(R.id.deleteBtn);
 
@@ -160,7 +171,6 @@ public class TeacherTask extends AppCompatActivity {
 
         deleteBtn.setOnClickListener(v -> {
             uploadedFilesMap.remove(fileName);
-            FileRepository.removeSharedFile(fileName);
             uploadedFilesContainer.removeView(fileItemView);
             Toast.makeText(this, fileName + " removed", Toast.LENGTH_SHORT).show();
         });
@@ -192,5 +202,11 @@ public class TeacherTask extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        startActivity(new Intent(TeacherTask.this, TeacherSite.class));
+        finish();
     }
 }

@@ -10,60 +10,60 @@
 
     <ImageView
         android:id="@+id/backteacher"
-        android:layout_width="123dp"
-        android:layout_height="110dp"
-        android:layout_marginEnd="304dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.055"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.061"
+        app:layout_constraintVertical_bias="0.02"
         app:srcCompat="@drawable/img_15" />
 
     <ImageView
         android:id="@+id/mailbtn"
-        android:layout_width="183dp"
-        android:layout_height="191dp"
+        android:layout_width="160dp"
+        android:layout_height="112dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.943"
+        app:layout_constraintHorizontal_bias="0.93"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.463"
+        app:layout_constraintVertical_bias="0.52"
         app:srcCompat="@drawable/lightblue_plain" />
 
     <ImageView
         android:id="@+id/taskbtn"
-        android:layout_width="183dp"
-        android:layout_height="191dp"
+        android:layout_width="160dp"
+        android:layout_height="112dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.064"
+        app:layout_constraintHorizontal_bias="0.07"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.463"
+        app:layout_constraintVertical_bias="0.52"
         app:srcCompat="@drawable/brighter_yellow_image" />
 
     <ImageView
         android:id="@+id/aaa5"
-        android:layout_width="218dp"
-        android:layout_height="224dp"
+        android:layout_width="190dp"
+        android:layout_height="180dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.434"
         app:srcCompat="@drawable/br" />
 
     <ImageView
         android:id="@+id/aaa8"
-        android:layout_width="218dp"
-        android:layout_height="224dp"
-        android:layout_marginStart="216dp"
+        android:layout_width="190dp"
+        android:layout_height="180dp"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.434"
         app:srcCompat="@drawable/br" />
 
     <TextView
@@ -73,10 +73,11 @@
         android:text="MESSAGE"
         android:textAlignment="center"
         android:textColor="#000000"
+        android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.938"
+        app:layout_constraintHorizontal_bias="0.95"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.512" />
@@ -88,36 +89,36 @@
         android:text="TASK"
         android:textAlignment="center"
         android:textColor="#000000"
+        android:textSize="34sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.103"
+        app:layout_constraintHorizontal_bias="0.03"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.513" />
+        app:layout_constraintTop_toTopOf="@+id/taskbtn"
+        app:layout_constraintVertical_bias="0.050000012" />
 
     <ImageView
         android:id="@+id/teachersetting"
-        android:layout_width="88dp"
-        android:layout_height="97dp"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.02"
         app:srcCompat="@drawable/settingg" />
-
-    <ImageView
-        android:id="@+id/logoutbtn"
-        android:layout_width="67dp"
-        android:layout_height="42dp"
-        app:layout_constraintTop_toBottomOf="@id/teachersetting"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/set" />
 
     <ImageView
         android:id="@+id/volumeOn"
         android:layout_width="67dp"
         android:layout_height="42dp"
-        app:layout_constraintTop_toBottomOf="@id/logoutbtn"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/teachersetting"
+        app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/om" />
 
     <ImageView
@@ -125,6 +126,8 @@
         android:layout_width="67dp"
         android:layout_height="42dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/volumeOn"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/volumeOn"
         app:srcCompat="@drawable/mute" />
 </androidx.constraintlayout.widget.ConstraintLayout>

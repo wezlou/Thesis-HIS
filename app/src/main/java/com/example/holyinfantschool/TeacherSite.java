@@ -13,7 +13,8 @@ public class TeacherSite extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false;
     private FirebaseAuth mAuth;
-    private ImageView volumeOn, volumeOff, logoutBtn;
+    private ImageView volumeOn, volumeOff;
+    private boolean settingsVisible = false; // track settings state
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,13 +27,12 @@ public class TeacherSite extends AppCompatActivity {
         // Initialize views
         ImageView taskBtn = findViewById(R.id.taskbtn);
         ImageView mailBtn = findViewById(R.id.mailbtn);
-        ImageView backTeacher = findViewById(R.id.backteacher);
+        ImageView backTeacher = findViewById(R.id.backteacher); // now used for logout
         ImageView teacherSetting = findViewById(R.id.teachersetting);
-        logoutBtn = findViewById(R.id.logoutbtn);
         volumeOn = findViewById(R.id.volumeOn);
         volumeOff = findViewById(R.id.volumeOff);
 
-        // Initially hide the setting buttons
+        // Initially hide the volume buttons
         hideSettingsButtons();
 
         // Initialize media player for background music
@@ -52,40 +52,8 @@ public class TeacherSite extends AppCompatActivity {
             finish();
         });
 
-       
-
-        // Back Button Click
-        backTeacher.setOnClickListener(v -> finish());
-
-        // Settings Button Click
-        teacherSetting.setOnClickListener(v -> {
-            if (logoutBtn.getVisibility() == View.VISIBLE) {
-                hideSettingsButtons();
-            } else {
-                showSettingsButtons();
-            }
-        });
-
-        // Volume On Button Click
-        volumeOn.setOnClickListener(v -> {
-            if (isMuted) {
-                mediaPlayer.setVolume(1.0f, 1.0f);
-                isMuted = false;
-                updateVolumeButtonsVisibility();
-            }
-        });
-
-        // Volume Off Button Click
-        volumeOff.setOnClickListener(v -> {
-            if (!isMuted) {
-                mediaPlayer.setVolume(0, 0);
-                isMuted = true;
-                updateVolumeButtonsVisibility();
-            }
-        });
-
-        // Logout Button Click with Firebase
-        logoutBtn.setOnClickListener(v -> {
+        // BackTeacher acts as Logout Button
+        backTeacher.setOnClickListener(v -> {
             mAuth.signOut();
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
@@ -100,16 +68,38 @@ public class TeacherSite extends AppCompatActivity {
             finish();
             Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
         });
+
+        // Settings Button Click
+        teacherSetting.setOnClickListener(v -> {
+            if (settingsVisible) {
+                hideSettingsButtons();
+            } else {
+                showSettingsButtons();
+            }
+            settingsVisible = !settingsVisible; // toggle state
+        });
+
+        // Volume On Button Click
+        volumeOn.setOnClickListener(v -> {
+            mediaPlayer.setVolume(0, 0);
+            isMuted = true;
+            updateVolumeButtonsVisibility();
+        });
+
+        // Volume Off Button Click
+        volumeOff.setOnClickListener(v -> {
+            mediaPlayer.setVolume(1.0f, 1.0f);
+            isMuted = false;
+            updateVolumeButtonsVisibility();
+        });
     }
 
     private void hideSettingsButtons() {
-        logoutBtn.setVisibility(View.GONE);
         volumeOn.setVisibility(View.GONE);
         volumeOff.setVisibility(View.GONE);
     }
 
     private void showSettingsButtons() {
-        logoutBtn.setVisibility(View.VISIBLE);
         updateVolumeButtonsVisibility();
     }
 

@@ -4,14 +4,17 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.ImageView;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 public class Homepage extends AppCompatActivity {
 
-    private ImageView playButton, loginButton, volumeOnButton, volumeOffButton, teacherSettingButton;
+    private Button playButton, loginButton, exitButton;
+    private ImageView volumeOnButton, volumeOffButton, teacherSettingButton;
     private FirebaseAuth firebaseAuth;
     private MediaPlayer mediaPlayer;
     private boolean isMusicPlaying = false;
@@ -25,49 +28,56 @@ public class Homepage extends AppCompatActivity {
         // Initialize FirebaseAuth
         firebaseAuth = FirebaseAuth.getInstance();
 
-        // Find views by ID
+        // ✅ Force sign out every time the app opens
+        firebaseAuth.signOut();
+
+        // Find views by ID (Buttons)
         playButton = findViewById(R.id.play1);
         loginButton = findViewById(R.id.login);
+        exitButton = findViewById(R.id.exit);
+
+        // Find views by ID (ImageViews)
         volumeOnButton = findViewById(R.id.volumeOn);
         volumeOffButton = findViewById(R.id.volumeOff);
         teacherSettingButton = findViewById(R.id.teachersetting);
 
-        // Initialize MediaPlayer (replace with actual music file in your res/raw folder)
-        mediaPlayer = MediaPlayer.create(this, R.raw.background_music); // Add your music file here
+        // Initialize MediaPlayer
+        mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
 
-        // Start the music automatically when the app opens
+        // Start background music automatically
         if (!isMusicPlaying) {
-            mediaPlayer.start();  // Start the music
+            mediaPlayer.start();
             isMusicPlaying = true;
         }
 
-        // Initially hide the volume buttons
+        // Initially hide volume buttons
         volumeOnButton.setVisibility(ImageView.INVISIBLE);
         volumeOffButton.setVisibility(ImageView.INVISIBLE);
 
-        // Navigate to CategoryPage when Play button is clicked
+        // ==============================
+        // BUTTON ACTIONS
+        // ==============================
+
+        // Play button → Go to CategoryPage
         playButton.setOnClickListener(v -> {
+            animateButton(playButton);
             Intent intent = new Intent(Homepage.this, Categorypage.class);
             startActivity(intent);
         });
 
-        // Check if user is already logged in
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser != null) {
-            // If logged in, clicking login goes to TeacherSite
-            loginButton.setOnClickListener(v -> {
-                Intent intent = new Intent(Homepage.this, TeacherSite.class);
-                startActivity(intent);
-            });
-        } else {
-            // If not logged in, clicking login goes to LoginForm
-            loginButton.setOnClickListener(v -> {
-                Intent intent = new Intent(Homepage.this, LoginForm.class);
-                startActivity(intent);
-            });
-        }
+        // Exit button → Close the app (sign out handled on next startup)
+        exitButton.setOnClickListener(v -> {
+            animateButton(exitButton);
+            finishAffinity(); // Close all activities
+            System.exit(0);   // Kill app process
+        });
 
-        // Toggle volume buttons when settings button is clicked
+        // Login button → Always go to LoginForm
+        loginButton.setOnClickListener(v -> {
+            animateButton(loginButton);
+            startActivity(new Intent(Homepage.this, LoginForm.class));
+        });
+
         teacherSettingButton.setOnClickListener(v -> {
             if (volumeOnButton.getVisibility() == ImageView.VISIBLE) {
                 volumeOnButton.setVisibility(ImageView.INVISIBLE);
@@ -78,27 +88,30 @@ public class Homepage extends AppCompatActivity {
             }
         });
 
-        // Start music when volumeOnButton is clicked
         volumeOnButton.setOnClickListener(v -> {
             if (!isMusicPlaying) {
-                mediaPlayer.start();  // Start the music
+                mediaPlayer.start();
                 isMusicPlaying = true;
             }
         });
 
-        // Pause music when volumeOffButton is clicked
         volumeOffButton.setOnClickListener(v -> {
             if (isMusicPlaying) {
-                mediaPlayer.pause();  // Pause the music
+                mediaPlayer.pause();
                 isMusicPlaying = false;
             }
         });
     }
 
+    private void animateButton(Button button) {
+        button.animate().scaleX(1.1f).scaleY(1.1f).setDuration(120)
+                .withEndAction(() ->
+                        button.animate().scaleX(1f).scaleY(1f).setDuration(120));
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
-        // Pause the music if the app is paused or closed
         if (isMusicPlaying) {
             mediaPlayer.pause();
             isMusicPlaying = false;
@@ -108,7 +121,6 @@ public class Homepage extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Release the MediaPlayer when the activity is destroyed
         if (mediaPlayer != null) {
             mediaPlayer.release();
         }

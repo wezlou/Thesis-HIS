@@ -1,50 +1,184 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/studentTaskRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/light_gray_bg"
+    android:background="@drawable/bg"
     tools:context=".studenttask">
 
     <!-- Header -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/headerCard"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@color/primary_color"
-        android:padding="16dp">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Your Tasks"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            android:gravity="center"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:gravity="center"
-            android:text="View all assigned tasks and materials"
-            android:textColor="@color/white"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <!-- Tasks List -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:padding="16dp">
+        android:elevation="6dp"
+        android:padding="12dp"
+        app:cardBackgroundColor="@color/primary_color"
+        app:cardCornerRadius="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
-            android:id="@+id/assignedTasksContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"/>
-    </ScrollView>
-</LinearLayout>
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            >
+
+            <!-- Back -->
+            <ImageView
+                android:id="@+id/backteacher"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="?selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:padding="4dp"
+                android:src="@drawable/img_15" />
+
+            <!-- Title & Subtitle -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your Tasks"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View all assigned tasks and materials"
+                    android:textColor="@color/white"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Settings -->
+            <ImageView
+                android:id="@+id/teachersetting"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="?selectableItemBackgroundBorderless"
+                android:contentDescription="Settings"
+                android:padding="4dp"
+                android:src="@drawable/settingg" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Volume Buttons -->
+    <ImageView
+        android:id="@+id/volumeOn"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:contentDescription="Mute"
+        android:src="@drawable/mute"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="8dp" />
+
+    <ImageView
+        android:id="@+id/volumeOff"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:contentDescription="Unmute"
+        android:src="@drawable/om"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="8dp" />
+
+    <!-- Filter Tabs -->
+    <HorizontalScrollView
+        android:id="@+id/filterScroll"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@+id/headerCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/filterAll"
+                style="@style/FilterTab"
+                android:text="All" />
+
+            <TextView
+                android:id="@+id/filterText"
+                style="@style/FilterTab"
+                android:text="Text" />
+
+            <TextView
+                android:id="@+id/filterImages"
+                style="@style/FilterTab"
+                android:text="Images" />
+
+            <TextView
+                android:id="@+id/filterVideos"
+                style="@style/FilterTab"
+                android:text="Videos" />
+
+            <TextView
+                android:id="@+id/filterPdfs"
+                style="@style/FilterTab"
+                android:text="PDFs" />
+
+            <TextView
+                android:id="@+id/filterDocs"
+                style="@style/FilterTab"
+                android:text="Docs" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Content -->
+    <FrameLayout
+        android:id="@+id/contentFrame"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/filterScroll"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Task List -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="12dp"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/assignedTasksContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+
+        <!-- Empty Message -->
+        <TextView
+            android:id="@+id/emptyMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="No items in this category"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

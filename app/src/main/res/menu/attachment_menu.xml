@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_image"
+        android:title="Attach Image"
+        android:icon="@drawable/ic_image"/>
+    <item
+        android:id="@+id/menu_pdf"
+        android:title="Attach PDF"
+        android:icon="@drawable/ic_pdf"/>
+    <item
+        android:id="@+id/menu_doc"
+        android:icon="@drawable/ic_file"
+        android:title="Attach Word/Docx" />
+</menu>
