@@ -7,7 +7,6 @@
     android:background="@drawable/tb"
     tools:context=".IncorrectActivity">
 
-
     <ImageView
         android:id="@+id/imageView4"
         android:layout_width="465dp"
@@ -23,7 +22,7 @@
     <TextView
         android:layout_width="275dp"
         android:layout_height="43dp"
-        android:text="❌ INCORRECT!! "
+        android:text="❌ INCORRECT!!"
         android:textColor="#F44336"
         android:fontFamily="@font/kavoon_regular"
         android:textSize="34sp"
@@ -35,17 +34,19 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.333" />
 
+    <!-- Image that gets filled with chosen wrong color -->
     <ImageView
         android:id="@+id/apple"
         android:layout_width="158dp"
         android:layout_height="143dp"
+        android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.465"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.459"
-        app:srcCompat="@drawable/bx" />
+        app:srcCompat="@drawable/plainapple" />
 
     <ImageView
         android:id="@+id/imageView44"
@@ -96,7 +97,6 @@
         app:lottie_loop="true"
         app:lottie_rawRes="@raw/mail" />
 
-
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -109,4 +109,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

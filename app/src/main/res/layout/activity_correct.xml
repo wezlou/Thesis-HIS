@@ -35,16 +35,17 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.337" />
 
+    <!-- Image that gets filled with chosen color -->
     <ImageView
         android:id="@+id/appleImage"
         android:layout_width="158dp"
         android:layout_height="131dp"
         android:adjustViewBounds="true"
+        android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-
         app:layout_constraintVertical_bias="0.452"
         app:srcCompat="@drawable/plainapple" />
 
