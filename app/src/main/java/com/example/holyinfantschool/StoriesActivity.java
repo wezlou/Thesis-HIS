@@ -1,10 +1,13 @@
 package com.example.holyinfantschool;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -13,7 +16,8 @@ import androidx.core.content.ContextCompat;
 public class StoriesActivity extends AppCompatActivity {
 
     private LinearLayout storyContainer;
-
+    private MediaPlayer mediaPlayer;
+    private boolean isMuted = false;
     private String[] storyTitles = {
             "The Tortoise and the Hare",
             "The Boy Who Cried Wolf",
@@ -38,66 +42,47 @@ public class StoriesActivity extends AppCompatActivity {
     };
 
     private String[] storyContents = {
-            // 1 The Tortoise and the Hare
-            "Once upon a time, a hare made fun of the slow-moving tortoise. Tired of his arrogance, the tortoise challenged him to a race. The hare laughed but agreed. During the race, the hare sped ahead and, thinking he was safe, decided to nap. The tortoise kept moving slowly but steadily and eventually passed the sleeping hare. When the hare awoke, it was too late. The tortoise had won. Moral: Slow and steady wins the race.",
+            "Once upon a time, a hare mocked a slow-moving tortoise. Proud of his speed, the hare challenged the tortoise to a race. As the race began, the hare ran far ahead and, feeling certain of victory, decided to nap under a tree. Meanwhile, the tortoise moved slowly but steadily, never stopping. When the hare awoke, he dashed toward the finish line, but to his surprise, the tortoise had already crossed it. The animals cheered for the tortoise, while the hare learned a lesson in humility. Moral: Slow and steady wins the race.",
 
-            // 2 The Boy Who Cried Wolf
-            "There once was a shepherd boy who grew bored watching his flock. To amuse himself, he cried out, 'Wolf! Wolf!' The villagers came running, only to find no wolf. The boy laughed. He repeated this trick several times until the villagers stopped believing him. One day, a real wolf came and attacked the flock. The boy cried for help, but no one came. Moral: Liars are not believed even when they speak the truth.",
+            "A young shepherd boy grew bored while watching his sheep in the meadow. To amuse himself, he shouted, 'Wolf! Wolf! A wolf is attacking the flock!' The villagers rushed to help, only to find no wolf. The boy laughed at their anger. Days later, he played the same trick, and again the villagers came running in vain. But one night, a real wolf appeared and attacked the sheep. The boy screamed for help, but no one came, thinking it was another false alarm. The wolf scattered the flock, leaving the boy regretful. Moral: No one believes a liar, even when they tell the truth.",
 
-            // 3 The Lion and the Mouse
-            "A lion once spared a tiny mouse who had disturbed him. Later, the lion was caught in a hunter’s net. The little mouse came and gnawed through the ropes, freeing the lion. The lion realized even the smallest creatures can be of help. Moral: Kindness is never wasted.",
+            "One day in the forest, a mighty lion caught a tiny mouse. The lion raised his paw to crush it, but the mouse pleaded, 'Please spare me! I may be small, but one day I will help you.' Amused, the lion let him go. Not long after, the lion was trapped in a hunter’s net. He roared helplessly. Hearing his cries, the mouse rushed to his aid and gnawed through the ropes until the lion was free. The lion thanked the mouse, realizing even the smallest creatures can be of great help. Moral: Kindness is never wasted.",
 
-            // 4 The Fox and the Grapes
-            "A hungry fox saw some grapes hanging high on a vine. He jumped and jumped but could not reach them. Finally, he gave up and muttered, 'They’re probably sour anyway.' Moral: It’s easy to despise what you cannot have.",
+            "A hungry fox came across a vine of ripe grapes hanging high above him. He leapt and leapt, but no matter how hard he tried, he could not reach them. Finally, tired and frustrated, the fox turned away, muttering, 'Those grapes are probably sour anyway.' He left, pretending he didn’t want them. Moral: It’s easy to despise what you cannot have.",
 
-            // 5 The Ant and the Grasshopper
-            "All summer long, the ant worked hard gathering food, while the grasshopper sang and played. When winter came, the grasshopper had nothing to eat and begged the ant for food. The ant reminded him of his laziness. Moral: Work hard today to prepare for tomorrow.",
+            "During the summer, an ant worked hard gathering food for the winter. Nearby, a grasshopper spent his days singing and playing. 'Why not rest and sing with me?' the grasshopper asked. The ant replied, 'I must prepare for winter.' When the cold months came, the ant was warm and had plenty to eat, while the grasshopper, hungry and freezing, begged the ant for food. But the ant said, 'You sang in summer, now dance in winter.' Moral: Hard work and planning bring rewards.",
 
-            // 6 The Ugly Duckling
-            "A mother duck’s eggs hatched, and one duckling looked different—big and awkward. The other animals mocked him. Sad and lonely, he wandered until one day he grew into a beautiful swan. Moral: Don’t judge by appearances; true beauty takes time to show.",
+            "A mother duck watched her eggs hatch. All the ducklings were yellow and fluffy—except one, who was large, gray, and awkward. The others mocked him, calling him ugly. Lonely and sad, the duckling wandered off, enduring a hard winter alone. But when spring came, he saw his reflection in a pond and realized he had grown into a beautiful swan. The other birds admired him, and he finally found where he belonged. Moral: Don’t judge by appearances; true beauty takes time to show.",
 
-            // 7 The Three Little Pigs
-            "Three pigs built houses: one of straw, one of sticks, and one of bricks. A hungry wolf blew down the first two houses, but the brick house stood strong. The wolf could not get in. Moral: Hard work and planning bring security.",
+            "Three little pigs set out to build homes. The first pig built a house of straw, the second a house of sticks, and the third, a sturdy house of bricks. Soon, a hungry wolf came along. He huffed and puffed and blew down the straw house, then the stick house, but he could not destroy the brick house. Safe inside, the pigs laughed while the wolf fled in defeat. Moral: Hard work and effort create strong foundations.",
 
-            // 8 Little Red Riding Hood
-            "A little girl went to visit her grandmother, carrying a basket of food. A cunning wolf reached the grandmother’s house first, disguised himself, and tricked the girl. Just as he was about to eat her, a woodcutter saved her. Moral: Be cautious of strangers.",
+            "A little girl named Little Red Riding Hood set off to visit her grandmother, carrying a basket of food. Her mother warned her not to talk to strangers. On the way, a sly wolf approached her, asking where she was going. She innocently told him. The wolf hurried to the grandmother’s house, swallowed the old woman, and disguised himself as her. When Red Riding Hood arrived, she noticed her grandmother looked strange. 'What big eyes you have!' she said. 'The better to see you with,' the wolf replied. Just as the wolf was about to pounce, a woodcutter rushed in and saved them, freeing the grandmother. Moral: Be cautious and never trust strangers.",
 
-            // 9 Goldilocks and the Three Bears
-            "Goldilocks entered the bears’ house while they were away. She ate their porridge, sat in their chairs, and slept in their beds. When the bears returned, she fled in fright. Moral: Respect others’ property.",
+            "Goldilocks wandered into the forest and found a cottage. Inside, she saw three bowls of porridge. She tasted the first—too hot. The second—too cold. The third—just right, and she ate it all. Next, she tried three chairs. The first was too big, the second too hard, and the third just right—but it broke under her. Then she lay in three beds: one too hard, one too soft, and the last one just right, where she fell asleep. The bears returned home to find her there. Frightened, Goldilocks fled and never returned. Moral: Respect others’ belongings.",
 
-            // 10 The Goose That Laid Golden Eggs
-            "A farmer owned a goose that laid a golden egg each day. Greedy for more, he killed the goose, hoping to get all the gold inside at once. But there was nothing. Moral: Greed destroys what you already have.",
+            "A farmer owned a goose that laid a golden egg every morning. At first, the farmer was delighted, but soon he grew greedy. 'Why wait for one egg a day? If I cut the goose open, I’ll get them all at once!' he thought. But when he killed the goose, he found no treasure inside—only an ordinary bird. He had lost the source of his wealth. Moral: Greed leads to ruin.",
 
-            // 11 Cinderella
-            "Cinderella lived with a cruel stepmother and stepsisters. With the help of her fairy godmother, she attended the prince’s ball but had to leave at midnight. The prince searched for the girl who fit the glass slipper, and Cinderella became his bride. Moral: Kindness and patience are rewarded.",
+            "Cinderella lived with a cruel stepmother and stepsisters who treated her like a servant. One day, an invitation came for a royal ball. The stepsisters went, but Cinderella was left behind. Her fairy godmother appeared and magically transformed her rags into a beautiful gown, with glass slippers on her feet. She warned Cinderella to return by midnight. At the ball, the prince was captivated by her. But at midnight, she fled, leaving behind a slipper. The prince searched the land, and when he found that the slipper fit only Cinderella, he married her, and she lived happily ever after. Moral: Kindness and patience are rewarded.",
 
-            // 12 Jack and the Beanstalk
-            "Jack traded his cow for magic beans. His mother was angry, but the beans grew into a huge beanstalk reaching the sky. Jack climbed it and found a giant’s castle full of treasures. He escaped with riches and lived happily with his mother. Moral: Courage and cleverness bring rewards.",
+            "Jack lived with his poor mother. One day, he traded their only cow for a handful of magic beans. His mother was furious and threw them away. Overnight, a giant beanstalk grew into the sky. Jack climbed it and found a giant’s castle. Inside, he discovered treasures: a hen that laid golden eggs and a magical harp. The giant chased him, but Jack escaped down the beanstalk and chopped it down. The giant fell, never to return. Jack and his mother lived in comfort. Moral: Courage and cleverness can change your fate.",
 
-            // 13 Hansel and Gretel
-            "Lost in the forest, Hansel and Gretel found a candy house owned by a wicked witch. She trapped them, planning to eat them, but clever Gretel tricked her and pushed her into the oven. The children escaped with treasure. Moral: Bravery and wit can overcome evil.",
+            "Hansel and Gretel were siblings lost in the forest. They came upon a cottage made of candy and sweets. Hungry, they began to eat it, but an old witch appeared. She lured them inside and locked Hansel in a cage, planning to fatten him up. Gretel was forced to work. One day, the witch prepared the oven to cook Hansel. Gretel tricked her by pretending not to know how it worked. When the witch bent over to show her, Gretel pushed her inside and shut the door. They escaped, taking the witch’s treasures, and found their way home. Moral: Bravery and quick thinking can overcome evil.",
 
-            // 14 Rapunzel
-            "A girl with long magical hair was locked in a tower by a wicked witch. A prince found her and climbed her hair to visit. They fell in love and eventually escaped, defeating the witch. Moral: Love and perseverance can overcome obstacles.",
+            "A girl with long, magical hair named Rapunzel was locked in a tower by a wicked sorceress. The only way up was by climbing her hair when the sorceress called, 'Rapunzel, Rapunzel, let down your hair!' One day, a prince overheard and visited her in secret. They fell in love. When the sorceress discovered this, she cut Rapunzel’s hair and banished her. The prince was blinded by thorns while searching for her. Years later, Rapunzel’s tears of love healed his eyes. They were reunited and lived happily ever after. Moral: Love and hope can overcome great trials.",
 
-            // 15 Snow White
-            "Snow White’s jealous stepmother gave her a poisoned apple. She fell into a deep sleep until a prince kissed her, breaking the spell. She awoke and lived happily ever after. Moral: Goodness and purity triumph over envy.",
+            "Snow White was a princess whose jealous stepmother, the Queen, asked her magic mirror, 'Who is the fairest of them all?' When the mirror answered, 'Snow White,' the Queen ordered a huntsman to kill her. But he spared Snow White, who fled into the forest. She found a cottage belonging to seven dwarfs who welcomed her. The Queen discovered Snow White was alive and disguised herself three times, finally tricking her with a poisoned apple. Snow White fell into a deep sleep. One day, a prince kissed her, breaking the spell. She awoke, and they lived happily ever after. Moral: Jealousy destroys, but goodness triumphs.",
 
-            // 16 Pinocchio
-            "A wooden puppet named Pinocchio wanted to be a real boy. Each time he lied, his nose grew longer. Through honesty and bravery, he finally became human. Moral: Honesty is the best policy.",
+            "Pinocchio was a wooden puppet created by Geppetto. A fairy brought him to life, telling him he could become a real boy if he proved himself brave and honest. But Pinocchio was mischievous, often lying, and each lie made his nose grow longer. He fell into many troubles, including being tricked by sly characters and trapped in dangerous places. At last, he learned to be truthful and selfless, even rescuing Geppetto from danger. The fairy rewarded him by turning him into a real boy. Moral: Honesty and courage lead to a true life.",
 
-            // 17 The Little Red Hen
-            "A little red hen found some wheat and asked her friends to help plant it. They refused. She harvested, milled, and baked bread alone. When it was ready, they all wanted to eat, but she refused to share. Moral: You reap what you sow.",
+            "One day, a little red hen found some wheat seeds. She asked her friends, the cat, the dog, and the duck, 'Who will help me plant this wheat?' 'Not I,' they each replied. She planted it alone. Later, she asked who would help water, harvest, and bake bread from the wheat, but again they refused. Finally, when the bread was ready, they all wanted to eat it. But the hen said, 'I did it all myself, so I will eat it myself.' And she did. Moral: Those who do not work should not expect rewards.",
 
-            // 18 The Fisherman and His Wife
-            "A poor fisherman caught a magical fish who granted wishes. His wife kept asking for more—first a house, then a castle, then to be queen. Finally, she wanted to be God. The fish took everything back, and they returned to poverty. Moral: Greed leads to downfall.",
+            "A poor fisherman caught a magical fish who begged for freedom. In return, the fish granted wishes. The fisherman’s wife grew greedy, asking for wealth, then a castle, then to be queen. Each time, the fish granted her wish, but she was never satisfied. Finally, she demanded to be ruler of the seas. The fish grew angry and took back everything, leaving them poor again. Moral: Greed destroys happiness.",
 
-            // 19 The Town Mouse and the Country Mouse
-            "The country mouse visited his cousin in the city. The city mouse had luxury but constant danger, while the country mouse lived simply but safely. The country mouse returned home, preferring peace over wealth. Moral: Better a simple life in safety than luxury in fear.",
+            "A country mouse invited his cousin, the town mouse, to visit. He offered him plain but hearty food. The town mouse laughed and invited him to the city, where they feasted on rich food in a grand house. But their meal was interrupted by a cat, forcing them to run for their lives. Terrified, the country mouse returned home, saying, 'Better beans in peace than delicacies in fear.' Moral: A simple life in safety is better than a luxurious one in danger.",
 
-            // 20 The Rainbow’s Lesson
-            "One day, the colors of the rainbow argued about who was most important. Each boasted of their beauty and use. Then rain came, and they joined together to form a magnificent rainbow. They realized their differences made them stronger together. Moral: Unity in diversity."
+            "The colors of the rainbow once quarreled over who was most important. Green boasted of life and growth, blue of the sky and sea, red of passion, yellow of warmth, and so on. Suddenly, rain poured down, and lightning flashed. The colors huddled together in fear. Then the rain spoke, 'Stop fighting. Each of you is special, but together you create beauty. When the storm ends, you will shine as one.' And so the rainbow appeared, dazzling the world. Moral: Unity creates harmony and beauty."
     };
+
 
     private int[] storyImages = {
             R.drawable.tortoise_hare,
@@ -127,7 +112,25 @@ public class StoriesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stories);
 
+        // ✅ Background music (looping)
+        mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
+        mediaPlayer.setLooping(true);
+        mediaPlayer.start();
+
         storyContainer = findViewById(R.id.story_container);
+
+        ImageView backButton = findViewById(R.id.backButton);
+        ImageView settingsButton = findViewById(R.id.settingsButton);
+
+        // Back navigates to Categorypage (same behavior as Videos)
+        backButton.setOnClickListener(v -> {
+            stopMusic();
+            Intent intent = new Intent(StoriesActivity.this, Categorypage.class);
+            startActivity(intent);
+            finish();
+        });
+
+        settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
 
         for (int i = 0; i < storyTitles.length; i++) {
             addStoryCard(storyTitles[i], storyContents[i], storyImages[i]);
@@ -173,13 +176,11 @@ public class StoriesActivity extends AppCompatActivity {
         previewView.setTextSize(16);
         previewView.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray));
 
-        // Add views
         innerLayout.addView(imageView);
         innerLayout.addView(titleView);
         innerLayout.addView(previewView);
         card.addView(innerLayout);
 
-        // On click → open detail page
         card.setOnClickListener(v -> {
             Intent intent = new Intent(StoriesActivity.this, StoryDetailActivity.class);
             intent.putExtra("title", title);
@@ -189,5 +190,71 @@ public class StoriesActivity extends AppCompatActivity {
         });
 
         storyContainer.addView(card);
+    }
+
+    private void showSettingsMenu(ImageView anchor) {
+        PopupMenu popupMenu = new PopupMenu(this, anchor);
+        popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
+        popupMenu.getMenu().add("Exit ❌");
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            String title = item.getTitle().toString();
+            if (title.contains("Mute")) {
+                muteDevice();
+                isMuted = true;
+                Toast.makeText(this, "Muted 🔇", Toast.LENGTH_SHORT).show();
+            } else if (title.contains("Unmute")) {
+                unmuteDevice();
+                isMuted = false;
+                Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
+            } else if (title.contains("Exit")) {
+                stopMusic();
+                finishAffinity();
+            }
+            return true;
+        });
+
+        popupMenu.show();
+    }
+
+    private void muteDevice() {
+        if (mediaPlayer != null) {
+            mediaPlayer.setVolume(0f, 0f);
+        }
+    }
+
+    private void unmuteDevice() {
+        if (mediaPlayer != null) {
+            mediaPlayer.setVolume(1f, 1f);
+            if (!mediaPlayer.isPlaying()) mediaPlayer.start();
+        }
+    }
+
+    private void stopMusic() {
+        if (mediaPlayer != null) {
+            try {
+                mediaPlayer.stop();
+            } catch (IllegalStateException ignored) {}
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) mediaPlayer.pause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mediaPlayer != null && !isMuted && !mediaPlayer.isPlaying()) mediaPlayer.start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopMusic();
     }
 }

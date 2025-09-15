@@ -1,18 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/story_scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/story_background"
     tools:context=".StoriesActivity">
 
+    <!-- Top Navigation Bar -->
     <LinearLayout
-        android:id="@+id/story_container"
+        android:id="@+id/topNav"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp" />
+        android:layout_height="64dp"
+        android:background="@drawable/img_60"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
 
-</ScrollView>
+        <!-- Back Button -->
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:src="@drawable/baseline_arrow_circle_left_24"
+            android:tint="@android:color/white" />
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-black"
+            android:gravity="center"
+            android:text="Fun Stories 📖"
+            android:textColor="@android:color/white"
+            android:textSize="22sp" />
+
+        <!-- Settings -->
+        <ImageView
+            android:id="@+id/settingsButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Settings"
+            android:src="@drawable/outline_apps_24"
+            android:tint="@android:color/white" />
+    </LinearLayout>
+
+    <!-- Scrollable Content Below Nav -->
+    <ScrollView
+        android:id="@+id/story_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/topNav"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/story_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp" />
+    </ScrollView>
+</RelativeLayout>
