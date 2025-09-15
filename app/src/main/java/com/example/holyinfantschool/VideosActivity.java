@@ -1,9 +1,12 @@
 package com.example.holyinfantschool;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -19,18 +22,34 @@ public class VideosActivity extends AppCompatActivity {
             "ZcX0gl-NFFg"
     };
 
+    private boolean isMuted = false;
+    private MediaPlayer mediaPlayer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videos);
 
+        // 🔊 Setup background music
+        mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
+        mediaPlayer.setLooping(true);
+        mediaPlayer.start();
+
         ImageView backButton = findViewById(R.id.backButton);
+        ImageView settingsButton = findViewById(R.id.settingsButton);
+
+        // Back Button
         backButton.setOnClickListener(v -> {
+            stopMusic(); // stop music when leaving
             Intent intent = new Intent(VideosActivity.this, Categorypage.class);
             startActivity(intent);
             finish();
         });
 
+        // Settings Popup
+        settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
+
+        // Video Thumbnails
         ImageView video1 = findViewById(R.id.video1);
         ImageView video2 = findViewById(R.id.video2);
         ImageView video3 = findViewById(R.id.video3);
@@ -59,7 +78,56 @@ public class VideosActivity extends AppCompatActivity {
     }
 
     private void openYouTube(String videoId) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + videoId));
+        Intent intent = new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.youtube.com/watch?v=" + videoId));
         startActivity(intent);
+    }
+
+    private void showSettingsMenu(ImageView anchor) {
+        PopupMenu popupMenu = new PopupMenu(this, anchor);
+        popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
+        popupMenu.getMenu().add("Exit ❌");
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            String title = item.getTitle().toString();
+            if (title.contains("Mute")) {
+                muteDevice();
+                isMuted = true;
+                Toast.makeText(this, "Muted 🔇", Toast.LENGTH_SHORT).show();
+            } else if (title.contains("Unmute")) {
+                unmuteDevice();
+                isMuted = false;
+                Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
+            } else if (title.contains("Exit")) {
+                stopMusic();   // release player cleanly
+                finishAffinity(); // close app completely
+            }
+            return true;
+        });
+
+        popupMenu.show();
+    }
+
+    private void muteDevice() {
+        if (mediaPlayer != null) {
+            mediaPlayer.setVolume(0f, 0f); // mute
+        }
+    }
+
+    private void unmuteDevice() {
+        if (mediaPlayer != null) {
+            mediaPlayer.setVolume(1f, 1f); // restore volume
+            if (!mediaPlayer.isPlaying()) {
+                mediaPlayer.start(); // resume if paused
+            }
+        }
+    }
+
+    private void stopMusic() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }
