@@ -10,6 +10,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.PopupMenu;
+import android.widget.Button;
+
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -26,9 +29,9 @@ public class studenttask extends AppCompatActivity {
     private LinearLayout assignedTasksContainer;
     private TextView filterAll, filterText, filterImages, filterVideos, filterPdfs, filterDocs;
     private TextView emptyMessage;
-    private ImageView backTeacher, teacherSetting, volumeOn, volumeOff;
 
-    private boolean settingsVisible = false;
+    private ImageView backButton, settingsButton;
+
     private boolean isMuted = false;
     private MediaPlayer mediaPlayer;
 
@@ -45,50 +48,23 @@ public class studenttask extends AppCompatActivity {
         emptyMessage = findViewById(R.id.emptyMessage);
         db = FirebaseFirestore.getInstance();
 
-        // Buttons
-        backTeacher = findViewById(R.id.backteacher);
-        teacherSetting = findViewById(R.id.teachersetting);
-        volumeOn = findViewById(R.id.volumeOn);
-        volumeOff = findViewById(R.id.volumeOff);
-
-        hideSettingsButtons();
+        // New top nav buttons
+        backButton = findViewById(R.id.backButton);
+        settingsButton = findViewById(R.id.settingsButton);
 
         // Background Music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // Back → Homepage
-        backTeacher.setOnClickListener(v -> {
+        // ✅ Back Button
+        backButton.setOnClickListener(v -> {
             stopMusic();
-            Intent intent = new Intent(studenttask.this, Homepage.class);
-            startActivity(intent);
-            finish();
+            finish(); // close activity
         });
 
-        // Settings toggle
-        teacherSetting.setOnClickListener(v -> {
-            if (settingsVisible) {
-                hideSettingsButtons();
-            } else {
-                showSettingsButtons();
-            }
-            settingsVisible = !settingsVisible;
-        });
-
-        // Volume mute
-        volumeOn.setOnClickListener(v -> {
-            mediaPlayer.setVolume(0, 0);
-            isMuted = true;
-            updateVolumeButtonsVisibility();
-        });
-
-        // Volume unmute
-        volumeOff.setOnClickListener(v -> {
-            mediaPlayer.setVolume(1.0f, 1.0f);
-            isMuted = false;
-            updateVolumeButtonsVisibility();
-        });
+        // ✅ Settings Button → Popup Menu
+        settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
 
         // Filters
         filterAll = findViewById(R.id.filterAll);
@@ -109,22 +85,44 @@ public class studenttask extends AppCompatActivity {
         filterDocs.setOnClickListener(v -> { highlightSelected(filterDocs); loadContent("application/msword"); });
     }
 
-    private void hideSettingsButtons() {
-        volumeOn.setVisibility(View.GONE);
-        volumeOff.setVisibility(View.GONE);
+    private void showSettingsMenu(ImageView anchor) {
+        PopupMenu popupMenu = new PopupMenu(this, anchor);
+        popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
+        popupMenu.getMenu().add("Exit ❌");
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            String title = item.getTitle().toString();
+            if (title.contains("Mute")) {
+                muteDevice();
+                isMuted = true;
+                Toast.makeText(this, "Muted 🔇", Toast.LENGTH_SHORT).show();
+            } else if (title.contains("Unmute")) {
+                unmuteDevice();
+                isMuted = false;
+                Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
+            } else if (title.contains("Exit")) {
+                stopMusic();
+                finishAffinity(); // exit app
+            }
+            return true;
+        });
+
+        popupMenu.show();
     }
 
-    private void showSettingsButtons() {
-        updateVolumeButtonsVisibility();
+    // 🎵 Music Control
+    private void muteDevice() {
+        if (mediaPlayer != null) {
+            mediaPlayer.setVolume(0f, 0f);
+        }
     }
 
-    private void updateVolumeButtonsVisibility() {
-        if (isMuted) {
-            volumeOn.setVisibility(View.GONE);
-            volumeOff.setVisibility(View.VISIBLE);
-        } else {
-            volumeOn.setVisibility(View.VISIBLE);
-            volumeOff.setVisibility(View.GONE);
+    private void unmuteDevice() {
+        if (mediaPlayer != null) {
+            mediaPlayer.setVolume(1f, 1f);
+            if (!mediaPlayer.isPlaying()) {
+                mediaPlayer.start();
+            }
         }
     }
 
@@ -237,6 +235,15 @@ public class studenttask extends AppCompatActivity {
         params.setMargins(0, 0, 0, 24);
         container.setLayoutParams(params);
 
+        // ✅ Open popup on click
+        container.setOnClickListener(v -> showTaskPopup(
+                title != null ? title : "No Title",
+                teacherEmail != null ? teacherEmail : "Unknown Teacher",
+                content != null ? content : "No Content",
+                timestamp != null ? DATE_FORMAT.format(timestamp) : "No date",
+                null // not a file
+        ));
+
         assignedTasksContainer.addView(container);
     }
 
@@ -280,7 +287,14 @@ public class studenttask extends AppCompatActivity {
         params.setMargins(0, 0, 0, 24);
         container.setLayoutParams(params);
 
-        container.setOnClickListener(v -> openFile(fileUri));
+        // ✅ Popup for file with "Open File" option
+        container.setOnClickListener(v -> showTaskPopup(
+                fileName != null ? fileName : "Unnamed File",
+                "Shared File",
+                "Tap 'Open File' to view this document.",
+                timestamp != null ? DATE_FORMAT.format(timestamp) : "No date",
+                fileUri
+        ));
 
         assignedTasksContainer.addView(container);
     }
@@ -295,6 +309,43 @@ public class studenttask extends AppCompatActivity {
             Toast.makeText(this, "No app available to open this file", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void showTaskPopup(String title, String teacher, String content, String date, Uri fileUri) {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+
+        // Inflate custom layout
+        View popupView = getLayoutInflater().inflate(R.layout.dialog_task_popup, null);
+
+        TextView titleView = popupView.findViewById(R.id.popupTitle);
+        TextView teacherView = popupView.findViewById(R.id.popupTeacher);
+        TextView contentView = popupView.findViewById(R.id.popupContent);
+        TextView dateView = popupView.findViewById(R.id.popupDate);
+        Button okButton = popupView.findViewById(R.id.okButton);
+
+        // Set values
+        titleView.setText(title != null ? title : "Untitled Task");
+        teacherView.setText(teacher != null ? "Teacher: " + teacher : "Teacher: Unknown");
+        contentView.setText(content != null ? content : "No content available.");
+        dateView.setText(date != null ? "Date: " + date : "Date: N/A");
+
+        // Attach layout
+        builder.setView(popupView);
+
+        // Create dialog
+        android.app.AlertDialog dialog = builder.create();
+
+        // Handle button
+        okButton.setText(fileUri != null ? "Open File" : "OK");
+        okButton.setOnClickListener(v -> {
+            if (fileUri != null) {
+                openFile(fileUri);
+            }
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
 
     private void highlightSelected(TextView selected) {
         filterAll.setBackgroundResource(R.drawable.filter_tab_bg);

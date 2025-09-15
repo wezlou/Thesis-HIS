@@ -8,94 +8,71 @@
     android:background="@drawable/bg"
     tools:context=".studenttask">
 
-    <!-- Header -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/headerCard"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:elevation="6dp"
-        android:padding="12dp"
-        app:cardBackgroundColor="@color/primary_color"
-        app:cardCornerRadius="0dp"
-        app:layout_constraintTop_toTopOf="parent"
+    <!-- New Top Navigation -->
+    <LinearLayout
+        android:id="@+id/topNav"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="@color/default_icon"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
+        <!-- Back Button -->
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:src="@drawable/baseline_arrow_circle_left_24"
+            android:tint="@android:color/white" />
+
+        <!-- Title + Subtitle -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            >
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
 
-            <!-- Back -->
-            <ImageView
-                android:id="@+id/backteacher"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:background="?selectableItemBackgroundBorderless"
-                android:contentDescription="Back"
-                android:padding="4dp"
-                android:src="@drawable/img_15" />
-
-            <!-- Title & Subtitle -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <!-- Main Title -->
+            <TextView
+                android:id="@+id/titleText"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:fontFamily="sans-serif-black"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:text="Your Task"
+                android:textColor="@android:color/white"
+                android:textSize="24sp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Your Tasks"
-                    android:textColor="@color/white"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+            <!-- Subtitle -->
+            <TextView
+                android:id="@+id/subTitleText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
+                android:gravity="center"
+                android:text="View all assigned tasks and materials"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="View all assigned tasks and materials"
-                    android:textColor="@color/white"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <!-- Settings -->
-            <ImageView
-                android:id="@+id/teachersetting"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:background="?selectableItemBackgroundBorderless"
-                android:contentDescription="Settings"
-                android:padding="4dp"
-                android:src="@drawable/settingg" />
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
 
-    <!-- Volume Buttons -->
-    <ImageView
-        android:id="@+id/volumeOn"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:contentDescription="Mute"
-        android:src="@drawable/mute"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/headerCard"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="8dp" />
-
-    <ImageView
-        android:id="@+id/volumeOff"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:contentDescription="Unmute"
-        android:src="@drawable/om"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/headerCard"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="8dp" />
+        <!-- Settings -->
+        <ImageView
+            android:id="@+id/settingsButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Settings"
+            android:src="@drawable/outline_apps_24"
+            android:tint="@android:color/white" />
+    </LinearLayout>
 
     <!-- Filter Tabs -->
     <HorizontalScrollView
@@ -103,7 +80,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        app:layout_constraintTop_toBottomOf="@+id/headerCard"
+        app:layout_constraintTop_toBottomOf="@+id/topNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
