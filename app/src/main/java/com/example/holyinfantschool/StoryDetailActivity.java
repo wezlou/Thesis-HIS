@@ -3,6 +3,7 @@ package com.example.holyinfantschool;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.widget.Button;
@@ -21,6 +22,8 @@ public class StoryDetailActivity extends AppCompatActivity {
     private String storyContent;
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false; // track mute state
+    private float currentVolume = 1f; // 0.0 - 1.0
+    private final Handler handler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,17 +57,17 @@ public class StoryDetailActivity extends AppCompatActivity {
                 tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                     @Override
                     public void onStart(String utteranceId) {
-                        runOnUiThread(() -> pauseMusic()); // pause when TTS starts
+                        runOnUiThread(() -> fadeOutMusic()); // fade out when TTS starts
                     }
 
                     @Override
                     public void onDone(String utteranceId) {
-                        runOnUiThread(() -> resumeMusic()); // resume when TTS finishes
+                        runOnUiThread(() -> fadeInMusic()); // fade in when TTS finishes
                     }
 
                     @Override
                     public void onError(String utteranceId) {
-                        runOnUiThread(() -> resumeMusic()); // resume on error too
+                        runOnUiThread(() -> fadeInMusic()); // also fade in on error
                     }
                 });
             }
@@ -73,7 +76,7 @@ public class StoryDetailActivity extends AppCompatActivity {
         // ✅ Play button (TTS reading)
         playButton.setOnClickListener(v -> {
             if (tts != null) {
-                pauseMusic(); // pause music immediately
+                fadeOutMusic(); // fade out immediately before speaking
                 tts.speak(storyContent, TextToSpeech.QUEUE_FLUSH, null, "STORY_TTS");
             }
         });
@@ -121,28 +124,51 @@ public class StoryDetailActivity extends AppCompatActivity {
     // ==============================
     private void muteDevice() {
         if (mediaPlayer != null) {
-            mediaPlayer.setVolume(0f, 0f); // mute
+            mediaPlayer.setVolume(0f, 0f);
         }
     }
 
     private void unmuteDevice() {
         if (mediaPlayer != null) {
-            mediaPlayer.setVolume(1f, 1f); // restore volume
+            mediaPlayer.setVolume(1f, 1f);
             if (!mediaPlayer.isPlaying()) {
-                mediaPlayer.start(); // resume if paused
+                mediaPlayer.start();
             }
         }
     }
 
-    private void pauseMusic() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
+    private void fadeOutMusic() {
+        if (mediaPlayer != null && mediaPlayer.isPlaying() && !isMuted) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (currentVolume > 0.1f) {
+                        currentVolume -= 0.1f;
+                        mediaPlayer.setVolume(currentVolume, currentVolume);
+                        handler.postDelayed(this, 100); // every 100ms
+                    } else {
+                        mediaPlayer.pause();
+                        currentVolume = 1f; // reset for next play
+                    }
+                }
+            }, 100);
         }
     }
 
-    private void resumeMusic() {
+    private void fadeInMusic() {
         if (mediaPlayer != null && !mediaPlayer.isPlaying() && !isMuted) {
             mediaPlayer.start();
+            currentVolume = 0f;
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (currentVolume < 1f) {
+                        currentVolume += 0.1f;
+                        mediaPlayer.setVolume(currentVolume, currentVolume);
+                        handler.postDelayed(this, 100); // every 100ms
+                    }
+                }
+            }, 100);
         }
     }
 
