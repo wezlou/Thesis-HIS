@@ -5,22 +5,68 @@
     android:background="@drawable/bg_gradient"
     android:padding="20dp">
 
+    <!-- ✅ Top Navigation -->
+    <LinearLayout
+        android:id="@+id/topNav"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="@drawable/img_60"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
+
+        <!-- Back Button -->
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:src="@drawable/baseline_arrow_circle_left_24"
+            android:tint="@android:color/white" />
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-black"
+            android:gravity="center"
+            android:text="Fun Stories 📖"
+            android:textColor="@android:color/white"
+            android:textSize="22sp" />
+
+        <!-- Settings -->
+        <ImageView
+            android:id="@+id/settingsButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Settings"
+            android:src="@drawable/outline_apps_24"
+            android:tint="@android:color/white" />
+    </LinearLayout>
+
+    <!-- ✅ Story Title -->
     <TextView
         android:id="@+id/storyTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/topNav"
+        android:layout_marginTop="12dp"
         android:text="Story Title"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@android:color/holo_blue_dark"
         android:gravity="center" />
 
+    <!-- ✅ Scrollable Content -->
     <ScrollView
         android:id="@+id/storyScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/storyTitle"
-        android:layout_above="@+id/playButton"
+        android:layout_above="@id/playButton"
         android:layout_marginTop="16dp">
 
         <TextView
@@ -33,14 +79,15 @@
             android:lineSpacingExtra="6dp" />
     </ScrollView>
 
+    <!-- ✅ Play Button -->
     <Button
         android:id="@+id/playButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="▶ Listen"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:backgroundTint="@android:color/holo_blue_dark"
+        android:text="▶ Listen"
         android:textColor="@android:color/white"
         android:padding="10dp" />
 

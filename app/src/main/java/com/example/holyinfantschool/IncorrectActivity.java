@@ -3,13 +3,13 @@ package com.example.holyinfantschool;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.content.Intent;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 public class IncorrectActivity extends AppCompatActivity {
 
@@ -20,15 +20,20 @@ public class IncorrectActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_incorrect);
 
-        ImageView resultImage = findViewById(R.id.apple);
+        // Use the correct ID from your XML (activity_incorrect.xml)
+        ImageView appleImage = findViewById(R.id.apple);
         ProgressBar progressBar = findViewById(R.id.progressBar);
 
         int imageRes = getIntent().getIntExtra("IMAGE_RES", -1);
         int colorRes = getIntent().getIntExtra("COLOR_RES", android.R.color.black);
 
         if (imageRes != -1) {
-            resultImage.setImageResource(imageRes);
-            resultImage.setColorFilter(getResources().getColor(colorRes), PorterDuff.Mode.SRC_IN);
+            appleImage.setImageResource(imageRes);
+            // Apply wrong color tint
+            appleImage.setColorFilter(
+                    ContextCompat.getColor(this, colorRes),
+                    android.graphics.PorterDuff.Mode.SRC_ATOP
+            );
         }
 
         progressBar.setMax(100);
@@ -68,3 +73,4 @@ public class IncorrectActivity extends AppCompatActivity {
         }
     }
 }
+
