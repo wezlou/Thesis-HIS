@@ -24,6 +24,7 @@ public class VideosActivity extends AppCompatActivity {
 
     private boolean isMuted = false;
     private MediaPlayer mediaPlayer;
+    private boolean isPausedBySystem = false; // 👈 track if music paused by lifecycle
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,26 +109,70 @@ public class VideosActivity extends AppCompatActivity {
         popupMenu.show();
     }
 
+    // 🔇 Mute background music
     private void muteDevice() {
         if (mediaPlayer != null) {
-            mediaPlayer.setVolume(0f, 0f); // mute
+            mediaPlayer.setVolume(0f, 0f);
         }
     }
 
+    // 🔊 Unmute background music
     private void unmuteDevice() {
         if (mediaPlayer != null) {
-            mediaPlayer.setVolume(1f, 1f); // restore volume
+            mediaPlayer.setVolume(1f, 1f);
             if (!mediaPlayer.isPlaying()) {
-                mediaPlayer.start(); // resume if paused
+                mediaPlayer.start();
             }
         }
     }
 
+    // ⏸ Pause background music
+    private void pauseMusic() {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            isPausedBySystem = true;
+        }
+    }
+
+    // ▶️ Resume music when coming back
+    private void resumeMusic() {
+        if (mediaPlayer != null && isPausedBySystem && !isMuted) {
+            try {
+                mediaPlayer.start();
+                isPausedBySystem = false;
+            } catch (IllegalStateException ignored) {}
+        }
+    }
+
+    // 🧭 App lifecycle handling
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // App minimized or another activity comes up
+        pauseMusic();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // App returns to foreground
+        resumeMusic();
+    }
+
+    // ⏹️ Stop and release background music
     private void stopMusic() {
         if (mediaPlayer != null) {
-            mediaPlayer.stop();
+            try {
+                mediaPlayer.stop();
+            } catch (IllegalStateException ignored) {}
             mediaPlayer.release();
             mediaPlayer = null;
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopMusic();
     }
 }
