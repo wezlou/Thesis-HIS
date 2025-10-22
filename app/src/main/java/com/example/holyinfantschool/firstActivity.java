@@ -37,6 +37,10 @@ public class firstActivity extends AppCompatActivity {
 
         // Back → Category page
         backBtn.setOnClickListener(v -> {
+            // 🔀 Shuffle all questions before leaving
+            GameSession.setQuestions(QuestionBank.getShuffledQuestions());
+
+            // Go back to Category page
             Intent intent = new Intent(this, Categorypage.class);
             startActivity(intent);
             finish();

@@ -65,4 +65,10 @@ public class QuestionBank {
 
         return new Question(id, text, imageRes, answers);
     }
+
+    public static List<Question> getShuffledQuestions() {
+        List<Question> questions = getQuestions();
+        Collections.shuffle(questions, new Random());
+        return questions;
+    }
 }
