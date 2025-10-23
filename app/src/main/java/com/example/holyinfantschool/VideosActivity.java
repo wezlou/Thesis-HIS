@@ -36,7 +36,7 @@ public class VideosActivity extends AppCompatActivity {
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        ImageView backButton = findViewById(R.id.backButton);
+        ImageView backButton = findViewById(R.id.backbtn);
         ImageView settingsButton = findViewById(R.id.settingsButton);
 
         // Back Button

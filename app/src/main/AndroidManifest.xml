@@ -29,6 +29,7 @@
         <activity android:name=".LoginAct" android:exported="false"/>
         <!--  Activity definitions  -->
         <activity android:name=".TeacherTask" android:exported="false"/>
+        <activity android:name=".Numberquiz" />
         <activity android:name=".TeacherMail" android:exported="false"/>
         <activity android:name=".TeacherCompletedTask" android:exported="false"/>
         <activity android:name=".TaskCompleteSplash" android:exported="false"/>

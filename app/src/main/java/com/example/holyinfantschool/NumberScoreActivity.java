@@ -17,33 +17,26 @@ public class NumberScoreActivity extends AppCompatActivity {
         Button playAgainButton = findViewById(R.id.playAgainButton);
         Button playAnotherGameButton = findViewById(R.id.playAnotherGameButton);
 
-        scoreTextView.setText("Your score: " + Number1Activity.correctAnswers + " correct, " +
-                Number1Activity.incorrectAnswers + " incorrect");
+        int correct = Shape1Activity.totalCorrect;
+        int incorrect = Shape1Activity.totalIncorrect;
 
-        playAgainButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Reset counters
-                Number1Activity.correctAnswers = 0;
-                Number1Activity.incorrectAnswers = 0;
+        scoreTextView.setText(
+                "✅ Correct: " + correct + "\n" +
+                        "❌ Incorrect: " + incorrect + "\n"
+        );
 
-                Intent intent = new Intent(NumberScoreActivity.this, Number1Activity.class);
-                startActivity(intent);
-                finish();
-            }
+        playAgainButton.setOnClickListener(v -> {
+            Number1Activity.correctAnswers = 0;
+            Number1Activity.incorrectAnswers = 0;
+            startActivity(new Intent(this, Numberquiz.class));
+            finish();
         });
 
-        playAnotherGameButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Reset counters
-                Number1Activity.correctAnswers = 0;
-                Number1Activity.incorrectAnswers = 0;
-
-                Intent intent = new Intent(NumberScoreActivity.this, QuizActivity.class);
-                startActivity(intent);
-                finish();
-            }
+        playAnotherGameButton.setOnClickListener(v -> {
+            Number1Activity.correctAnswers = 0;
+            Number1Activity.incorrectAnswers = 0;
+            startActivity(new Intent(this, QuizActivity.class));
+            finish();
         });
     }
 }

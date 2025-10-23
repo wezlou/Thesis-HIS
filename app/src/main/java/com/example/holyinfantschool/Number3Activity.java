@@ -10,7 +10,7 @@ public class Number3Activity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_number3);
+        setContentView(R.layout.activity_number);
 
         TextView textView15 = findViewById(R.id.textView15);
         TextView textView17 = findViewById(R.id.textView17);
