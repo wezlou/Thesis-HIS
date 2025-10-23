@@ -119,7 +119,7 @@ public class StoriesActivity extends AppCompatActivity {
 
         storyContainer = findViewById(R.id.story_container);
 
-        ImageView backButton = findViewById(R.id.backButton);
+        ImageView backButton = findViewById(R.id.backbtn);
         ImageView settingsButton = findViewById(R.id.settingsButton);
 
         // Back navigates to Categorypage (same behavior as Videos)
