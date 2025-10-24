@@ -1,6 +1,5 @@
 package com.example.holyinfantschool;
 
-import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,7 +32,7 @@ public class StoryDetailActivity extends AppCompatActivity {
         TextView titleView = findViewById(R.id.storyTitle);
         TextView contentView = findViewById(R.id.storyContent);
         Button playButton = findViewById(R.id.playButton);
-        ImageView backButton = findViewById(R.id.backButton);
+        ImageView backButton = findViewById(R.id.backbtn);
         ImageView settingsButton = findViewById(R.id.settingsButton);
 
         // ✅ Get story data from intent

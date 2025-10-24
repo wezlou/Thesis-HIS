@@ -49,7 +49,7 @@ public class studenttask extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         // New top nav buttons
-        backButton = findViewById(R.id.backButton);
+        backButton = findViewById(R.id.backbtn);
         settingsButton = findViewById(R.id.settingsButton);
 
         // Background Music
