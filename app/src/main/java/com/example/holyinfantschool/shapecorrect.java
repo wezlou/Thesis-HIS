@@ -1,8 +1,11 @@
 package com.example.holyinfantschool;
 
-import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Handler;
 import android.widget.ImageView;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 public class shapecorrect extends AppCompatActivity {
@@ -11,11 +14,23 @@ public class shapecorrect extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_shapecorrect);
 
-        ImageView b1 = findViewById(R.id.b2);
-        ImageView shapeImage = findViewById(R.id.circle);
+        ImageView questionView = findViewById(R.id.b2);
+        ImageView answerView = findViewById(R.id.circle);
 
-        Intent intent = getIntent();
-        b1.setImageResource(intent.getIntExtra("b1_image", 0));
-        shapeImage.setImageResource(intent.getIntExtra("shape_image", 0));
+        // 🔹 Retrieve images
+        byte[] questionBytes = getIntent().getByteArrayExtra("question_shape");
+        byte[] answerBytes = getIntent().getByteArrayExtra("answer_shape");
+
+        if (questionBytes != null) {
+            Bitmap questionBitmap = BitmapFactory.decodeByteArray(questionBytes, 0, questionBytes.length);
+            questionView.setImageBitmap(questionBitmap);
+        }
+        if (answerBytes != null) {
+            Bitmap answerBitmap = BitmapFactory.decodeByteArray(answerBytes, 0, answerBytes.length);
+            answerView.setImageBitmap(answerBitmap);
+        }
+
+        // ⏱ Return to game after delay
+        new Handler().postDelayed(this::finish, 1500);
     }
 }

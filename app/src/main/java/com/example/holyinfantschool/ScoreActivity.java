@@ -99,6 +99,10 @@ public class ScoreActivity extends AppCompatActivity {
         playAgainButton.setOnClickListener(v -> {
             GameScore.reset();
             stopMusic();
+
+            // 🔀 Shuffle questions before restarting the game
+            GameSession.setQuestions(QuestionBank.getShuffledQuestions());
+
             Intent intent = new Intent(ScoreActivity.this, firstActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);

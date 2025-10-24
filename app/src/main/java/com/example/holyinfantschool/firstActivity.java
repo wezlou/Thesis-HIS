@@ -32,11 +32,15 @@ public class firstActivity extends AppCompatActivity {
         choicesLayout = findViewById(R.id.choicesLayout);
 
         // Buttons
-        ImageView backBtn = findViewById(R.id.backButton);
+        ImageView backBtn = findViewById(R.id.backbtn);
         ImageView settingsBtn = findViewById(R.id.settingsButton);
 
         // Back → Category page
         backBtn.setOnClickListener(v -> {
+            // 🔀 Shuffle all questions before leaving
+            GameSession.setQuestions(QuestionBank.getShuffledQuestions());
+
+            // Go back to Category page
             Intent intent = new Intent(this, Categorypage.class);
             startActivity(intent);
             finish();
