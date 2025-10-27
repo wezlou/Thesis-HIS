@@ -110,22 +110,47 @@ public class Homepage extends AppCompatActivity {
         }
     }
 
-    // ✅ Check Firestore if user is student; otherwise assume teacher
     private void checkIfStudentOrTeacher(String uid) {
-        DocumentReference studentRef = firestore.collection("students").document(uid);
-        studentRef.get().addOnSuccessListener(documentSnapshot -> {
-            if (documentSnapshot.exists()) {
-                // 🔹 Student found → go to Categorypage
-                Toast.makeText(this, "Welcome, Student!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(Homepage.this, Categorypage.class));
-            } else {
-                // 🔹 Not in students → teacher account
-                Toast.makeText(this, "Welcome, Teacher!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(Homepage.this, TeacherSite.class));
-            }
-            finish();
-        }).addOnFailureListener(e ->
-                Toast.makeText(this, "Error checking user: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+
+        if (user == null) {
+            Toast.makeText(this, "No user logged in.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String email = user.getEmail();
+        if (email == null || email.isEmpty()) {
+            Toast.makeText(this, "User email not found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1️⃣ Check if the user email exists in students collection
+        db.collection("students").whereEqualTo("email", email).get()
+                .addOnSuccessListener(studentQuery -> {
+                    if (!studentQuery.isEmpty()) {
+                        Toast.makeText(this, "Welcome, Student!", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(Homepage.this, Categorypage.class));
+                        finish();
+                    } else {
+                        // 2️⃣ Not in students → check faculty
+                        db.collection("faculty").whereEqualTo("email", email).get()
+                                .addOnSuccessListener(facultyQuery -> {
+                                    if (!facultyQuery.isEmpty()) {
+                                        Toast.makeText(this, "Welcome, Teacher!", Toast.LENGTH_SHORT).show();
+                                        startActivity(new Intent(Homepage.this, TeacherSite.class));
+                                    } else {
+                                        Toast.makeText(this, "Account not found in either students or faculty.", Toast.LENGTH_SHORT).show();
+                                        firebaseAuth.signOut();
+                                    }
+                                    finish();
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(this, "Error checking faculty: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error checking student: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     @Override
