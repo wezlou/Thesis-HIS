@@ -26,7 +26,6 @@ public class TeacherSite extends AppCompatActivity {
 
         // Initialize views
         ImageView taskBtn = findViewById(R.id.taskbtn);
-        ImageView mailBtn = findViewById(R.id.mailbtn);
         ImageView backTeacher = findViewById(R.id.backteacher); // now used for logout
         ImageView teacherSetting = findViewById(R.id.teachersetting);
         volumeOn = findViewById(R.id.volumeOn);
@@ -46,12 +45,6 @@ public class TeacherSite extends AppCompatActivity {
             finish();
         });
 
-        // Mail Button Click
-        mailBtn.setOnClickListener(v -> {
-            startActivity(new Intent(TeacherSite.this, MailSplash.class));
-            finish();
-        });
-
         // BackTeacher acts as Logout Button
         backTeacher.setOnClickListener(v -> {
             mAuth.signOut();
@@ -60,7 +53,7 @@ public class TeacherSite extends AppCompatActivity {
                 mediaPlayer.release();
                 mediaPlayer = null;
             }
-            Intent intent = new Intent(TeacherSite.this, LoginForm.class);
+            Intent intent = new Intent(TeacherSite.this, Homepage.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
                     Intent.FLAG_ACTIVITY_NEW_TASK |
                     Intent.FLAG_ACTIVITY_CLEAR_TASK);

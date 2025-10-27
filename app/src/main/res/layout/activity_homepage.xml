@@ -8,6 +8,7 @@
     android:background="@drawable/kd"
     tools:context=".Homepage">
 
+    <!-- Existing Content -->
     <TextView
         android:id="@+id/textView10"
         android:layout_width="wrap_content"
@@ -26,22 +27,6 @@
         app:layout_constraintVertical_bias="0.058" />
 
     <TextView
-        android:id="@+id/textView12"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/kavoon_regular"
-        android:text="TAGBILARAN CITY"
-        android:textAlignment="center"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView11"
-        app:layout_constraintVertical_bias="0.0" />
-
-    <TextView
         android:id="@+id/textView11"
         android:layout_width="40dp"
         android:layout_height="22dp"
@@ -58,6 +43,22 @@
         app:layout_constraintTop_toBottomOf="@+id/textView10"
         app:layout_constraintVertical_bias="0.0" />
 
+    <TextView
+        android:id="@+id/textView12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/kavoon_regular"
+        android:text="TAGBILARAN CITY"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView11"
+        app:layout_constraintVertical_bias="0.0" />
+
     <ImageView
         android:id="@+id/imageView2"
         android:layout_width="78dp"
@@ -69,33 +70,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.04000002"
         app:srcCompat="@drawable/kl" />
-
-    <!-- Wooden sign background -->
-
-    <ImageView
-        android:id="@+id/imageView9"
-        android:layout_width="92dp"
-        android:layout_height="88dp"
-        android:rotationY="180"
-        app:layout_constraintBottom_toTopOf="@+id/play1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.2"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView2"
-        app:layout_constraintVertical_bias="0.94"
-        app:srcCompat="@drawable/img_8" />
-
-    <ImageView
-        android:id="@+id/woodSign"
-        android:layout_width="235dp"
-        android:layout_height="421dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
-        app:srcCompat="@drawable/img_13" />
 
     <ImageView
         android:id="@+id/imageView99"
@@ -145,60 +119,6 @@
         app:layout_constraintTop_toBottomOf="@+id/volumeOn"
         app:srcCompat="@drawable/mute" />
 
-    <Button
-        android:id="@+id/play1"
-        android:layout_width="208dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="60dp"
-        android:background="@android:color/transparent"
-        android:fontFamily="@font/luckiestguy"
-        android:rotation="-4"
-        android:text="START"
-        android:textColor="@android:color/white"
-        android:textSize="34sp"
-        android:textStyle="bold|italic"
-        app:layout_constraintBottom_toTopOf="@+id/login"
-        app:layout_constraintEnd_toEndOf="@id/woodSign"
-        app:layout_constraintHorizontal_bias="0.666"
-        app:layout_constraintStart_toStartOf="@id/woodSign"
-        app:layout_constraintTop_toTopOf="@id/woodSign"
-        app:layout_constraintVertical_bias="0.041" />
-
-    <Button
-        android:id="@+id/login"
-        android:layout_width="200dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="16dp"
-        android:background="@android:color/transparent"
-        android:fontFamily="@font/luckiestguy"
-        android:rotation="4"
-        android:text="LOGIN"
-        android:textColor="@android:color/white"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/exit"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@id/woodSign"
-        app:layout_constraintTop_toTopOf="@id/woodSign"
-        app:layout_constraintVertical_bias="0.866" />
-
-    <Button
-        android:id="@+id/exit"
-        android:layout_width="200dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="200dp"
-        android:background="@android:color/transparent"
-        android:fontFamily="@font/luckiestguy"
-        android:text="EXIT"
-        android:textColor="@android:color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="@id/woodSign"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@id/woodSign"
-        app:layout_constraintTop_toTopOf="@id/woodSign" />
-
     <ImageView
         android:id="@+id/imageView6"
         android:layout_width="164dp"
@@ -210,5 +130,78 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0"
         app:srcCompat="@drawable/img_11" />
+
+    <!-- 🌿 Jungle-Themed Login Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/loginCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginVertical="24dp"
+        android:backgroundTint="#E6FFFFFF"
+        android:elevation="10dp"
+        app:cardCornerRadius="20dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center_horizontal">
+
+            <!-- Jungle Leaf Icon -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome Back"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#2E7D32"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="sans-serif-medium" />
+
+            <EditText
+                android:id="@+id/emailInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Email"
+                android:background="@drawable/rounded_input_bg"
+                android:padding="12dp"
+                android:textColor="#2E2E2E"
+                android:textColorHint="#6E6E6E"
+                android:drawablePadding="10dp"
+                android:inputType="textPersonName" />
+
+            <EditText
+                android:id="@+id/passwordInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Password"
+                android:background="@drawable/rounded_input_bg"
+                android:padding="12dp"
+                android:textColor="#2E2E2E"
+                android:textColorHint="#6E6E6E"
+                android:drawablePadding="10dp"
+                android:inputType="textPassword"
+                android:layout_marginTop="12dp" />
+
+            <Button
+                android:id="@+id/loginButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="LOGIN"
+                android:textAllCaps="true"
+                android:textColor="#FFFFFF"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="#43A047" /> <!-- Jungle green -->
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

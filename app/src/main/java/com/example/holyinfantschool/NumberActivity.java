@@ -21,7 +21,7 @@ public class NumberActivity extends AppCompatActivity {
         nbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NumberActivity.this, Number1Activity.class);
+                Intent intent = new Intent(NumberActivity.this, Numberquiz.class);
                 startActivity(intent);
             }
         });
