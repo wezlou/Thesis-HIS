@@ -8,6 +8,8 @@ import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 public class Categorypage extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false;
@@ -40,10 +42,19 @@ public class Categorypage extends AppCompatActivity {
         // Back button → Homepage
         backTeacher.setOnClickListener(v -> {
             stopMusic();
+
+            // 🔹 Log out user from Firebase
+            FirebaseAuth.getInstance().signOut();
+
+            // 🔹 Go back to Homepage (login)
             Intent intent = new Intent(Categorypage.this, Homepage.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+
+            // 🔹 Finish current activity
             finish();
         });
+
 
         // Settings button
         teacherSetting.setOnClickListener(v -> {
