@@ -4,18 +4,27 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class Homepage extends AppCompatActivity {
 
-    private Button playButton, loginButton, exitButton;
+    private EditText usernameInput, passwordInput;
+    private Button loginButton;
     private ImageView volumeOnButton, volumeOffButton, teacherSettingButton;
+
     private FirebaseAuth firebaseAuth;
+    private FirebaseFirestore firestore;
     private MediaPlayer mediaPlayer;
     private boolean isMusicPlaying = false;
 
@@ -25,59 +34,30 @@ public class Homepage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_homepage);
 
-        // Initialize FirebaseAuth
+        // Firebase init
         firebaseAuth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
 
-        // ✅ Force sign out every time the app opens
-        firebaseAuth.signOut();
-
-        // Find views by ID (Buttons)
-        playButton = findViewById(R.id.play1);
-        loginButton = findViewById(R.id.login);
-        exitButton = findViewById(R.id.exit);
-
-        // Find views by ID (ImageViews)
+        // UI components
+        usernameInput = findViewById(R.id.emailInput);
+        passwordInput = findViewById(R.id.passwordInput);
+        loginButton = findViewById(R.id.loginButton);
         volumeOnButton = findViewById(R.id.volumeOn);
         volumeOffButton = findViewById(R.id.volumeOff);
         teacherSettingButton = findViewById(R.id.teachersetting);
 
-        // Initialize MediaPlayer
+        // Background music setup
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
-
-        // Start background music automatically
         if (!isMusicPlaying) {
             mediaPlayer.start();
             isMusicPlaying = true;
         }
 
-        // Initially hide volume buttons
+        // Hide volume controls initially
         volumeOnButton.setVisibility(ImageView.INVISIBLE);
         volumeOffButton.setVisibility(ImageView.INVISIBLE);
 
-        // ==============================
-        // BUTTON ACTIONS
-        // ==============================
-
-        // Play button → Go to CategoryPage
-        playButton.setOnClickListener(v -> {
-            animateButton(playButton);
-            Intent intent = new Intent(Homepage.this, Categorypage.class);
-            startActivity(intent);
-        });
-
-        // Exit button → Close the app (sign out handled on next startup)
-        exitButton.setOnClickListener(v -> {
-            animateButton(exitButton);
-            finishAffinity(); // Close all activities
-            System.exit(0);   // Kill app process
-        });
-
-        // Login button → Always go to LoginForm
-        loginButton.setOnClickListener(v -> {
-            animateButton(loginButton);
-            startActivity(new Intent(Homepage.this, LoginForm.class));
-        });
-
+        // Teacher settings button toggles sound buttons
         teacherSettingButton.setOnClickListener(v -> {
             if (volumeOnButton.getVisibility() == ImageView.VISIBLE) {
                 volumeOnButton.setVisibility(ImageView.INVISIBLE);
@@ -101,12 +81,51 @@ public class Homepage extends AppCompatActivity {
                 isMusicPlaying = false;
             }
         });
+
+        // 🔹 Login button logic
+        loginButton.setOnClickListener(v -> {
+            String email = usernameInput.getText().toString().trim();
+            String password = passwordInput.getText().toString().trim();
+
+            if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+                Toast.makeText(this, "Please enter both email and password.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            firebaseAuth.signInWithEmailAndPassword(email, password)
+                    .addOnSuccessListener(authResult -> {
+                        FirebaseUser user = firebaseAuth.getCurrentUser();
+                        if (user != null) {
+                            checkIfStudentOrTeacher(user.getUid());
+                        }
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        });
+
+        // 🔹 Auto-login if user already authenticated
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        if (currentUser != null) {
+            checkIfStudentOrTeacher(currentUser.getUid());
+        }
     }
 
-    private void animateButton(Button button) {
-        button.animate().scaleX(1.1f).scaleY(1.1f).setDuration(120)
-                .withEndAction(() ->
-                        button.animate().scaleX(1f).scaleY(1f).setDuration(120));
+    // ✅ Check Firestore if user is student; otherwise assume teacher
+    private void checkIfStudentOrTeacher(String uid) {
+        DocumentReference studentRef = firestore.collection("students").document(uid);
+        studentRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                // 🔹 Student found → go to Categorypage
+                Toast.makeText(this, "Welcome, Student!", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(Homepage.this, Categorypage.class));
+            } else {
+                // 🔹 Not in students → teacher account
+                Toast.makeText(this, "Welcome, Teacher!", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(Homepage.this, TeacherSite.class));
+            }
+            finish();
+        }).addOnFailureListener(e ->
+                Toast.makeText(this, "Error checking user: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     @Override

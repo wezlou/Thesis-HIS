@@ -21,16 +21,16 @@
         app:srcCompat="@drawable/img_15" />
 
     <ImageView
-        android:id="@+id/mailbtn"
-        android:layout_width="160dp"
-        android:layout_height="112dp"
+        android:id="@+id/aaa5"
+        android:layout_width="190dp"
+        android:layout_height="180dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.93"
+        app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.52"
-        app:srcCompat="@drawable/lightblue_plain" />
+        app:layout_constraintVertical_bias="0.499"
+        app:srcCompat="@drawable/br" />
 
     <ImageView
         android:id="@+id/taskbtn"
@@ -38,49 +38,11 @@
         android:layout_height="112dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.07"
+        app:layout_constraintHorizontal_bias="0.509"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.52"
+        app:layout_constraintVertical_bias="0.518"
         app:srcCompat="@drawable/brighter_yellow_image" />
-
-    <ImageView
-        android:id="@+id/aaa5"
-        android:layout_width="190dp"
-        android:layout_height="180dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/br" />
-
-    <ImageView
-        android:id="@+id/aaa8"
-        android:layout_width="190dp"
-        android:layout_height="180dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/br" />
-
-    <TextView
-        android:id="@+id/textView25"
-        android:layout_width="172dp"
-        android:layout_height="60dp"
-        android:text="MESSAGE"
-        android:textAlignment="center"
-        android:textColor="#000000"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.95"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.512" />
 
     <TextView
         android:id="@+id/textView44"
@@ -93,10 +55,10 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.03"
+        app:layout_constraintHorizontal_bias="0.489"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/taskbtn"
-        app:layout_constraintVertical_bias="0.050000012" />
+        app:layout_constraintVertical_bias="0.051" />
 
     <ImageView
         android:id="@+id/teachersetting"

@@ -182,7 +182,6 @@ public class Numberquiz extends AppCompatActivity {
         // 🌈 Glow color (green/red)
         int glowColor = isCorrect ? Color.parseColor("#AA00FF00") : Color.parseColor("#AAFF0000");
 
-        // 🌌 Create radial gradient (starting big → small)
         GradientDrawable gradient = new GradientDrawable();
         gradient.setShape(GradientDrawable.RECTANGLE);
         gradient.setGradientType(GradientDrawable.RADIAL_GRADIENT);
@@ -190,18 +189,15 @@ public class Numberquiz extends AppCompatActivity {
         gradient.setColors(new int[]{glowColor, Color.TRANSPARENT});
         feedbackOverlay.setBackground(gradient);
 
-        // 🌀 Animate gradient radius shrinking (from corners → center)
         ValueAnimator animator = ValueAnimator.ofFloat(1.5f, 0f);
         animator.setDuration(1200);
         animator.setInterpolator(new android.view.animation.DecelerateInterpolator());
         animator.addUpdateListener(animation -> {
             float progress = (float) animation.getAnimatedValue();
 
-            // Start large (edges visible), shrink to center
             float radius = 1200f * progress + 400f;
             gradient.setGradientRadius(radius);
 
-            // Fade as it shrinks
             feedbackOverlay.setAlpha(1f - progress * 0.8f);
         });
 
@@ -241,7 +237,6 @@ public class Numberquiz extends AppCompatActivity {
         popupMenu.show();
     }
 
-    // ================= MUSIC CONTROL =================
 
     private void muteDevice() {
         if (mediaPlayer != null) mediaPlayer.setVolume(0f, 0f);
