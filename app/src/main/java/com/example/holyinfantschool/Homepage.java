@@ -5,23 +5,21 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.Toast;
-
+import android.view.View;
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class Homepage extends AppCompatActivity {
 
-    private EditText usernameInput, passwordInput;
-    private Button loginButton;
-    private ImageView volumeOnButton, volumeOffButton, teacherSettingButton;
+    private Button studentLoginBtn, facultyLoginBtn, exitBtn;
+    private ImageView volumeOn, volumeOff, teacherSetting;
+    private LinearLayout studentOverlay, facultyOverlay;
+    private EditText studentEmail, facultyEmail;
+    private EditText studentPassword, facultyPassword;
+    private TextView forgotStudentPassword, forgotFacultyPassword;
+    private Button studentLoginConfirm, facultyLoginConfirm, closeStudentOverlay, closeFacultyOverlay;
 
     private FirebaseAuth firebaseAuth;
     private FirebaseFirestore firestore;
@@ -34,139 +32,127 @@ public class Homepage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_homepage);
 
-        // Firebase init
         firebaseAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
-        // UI components
-        usernameInput = findViewById(R.id.emailInput);
-        passwordInput = findViewById(R.id.passwordInput);
-        loginButton = findViewById(R.id.loginButton);
-        volumeOnButton = findViewById(R.id.volumeOn);
-        volumeOffButton = findViewById(R.id.volumeOff);
-        teacherSettingButton = findViewById(R.id.teachersetting);
+        // Views
+        studentLoginBtn = findViewById(R.id.student_login);
+        facultyLoginBtn = findViewById(R.id.faculty_login);
+        exitBtn = findViewById(R.id.exit);
+        volumeOn = findViewById(R.id.volumeOn);
+        volumeOff = findViewById(R.id.volumeOff);
+        teacherSetting = findViewById(R.id.teachersetting);
 
-        // Background music setup
+        studentOverlay = findViewById(R.id.studentLoginOverlay);
+        facultyOverlay = findViewById(R.id.facultyLoginOverlay);
+
+        studentEmail = findViewById(R.id.studentEmail);
+        studentPassword = findViewById(R.id.studentPassword);
+        facultyEmail = findViewById(R.id.facultyEmail);
+        facultyPassword = findViewById(R.id.facultyPassword);
+
+        forgotStudentPassword = findViewById(R.id.forgotStudentPassword);
+        forgotFacultyPassword = findViewById(R.id.forgotFacultyPassword);
+
+        studentLoginConfirm = findViewById(R.id.studentLoginButton);
+        facultyLoginConfirm = findViewById(R.id.facultyLoginButton);
+        closeStudentOverlay = findViewById(R.id.closeStudentOverlay);
+        closeFacultyOverlay = findViewById(R.id.closeFacultyOverlay);
+
+        // Background Music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
-        if (!isMusicPlaying) {
-            mediaPlayer.start();
-            isMusicPlaying = true;
-        }
+        mediaPlayer.setLooping(true);
+        mediaPlayer.start();
+        isMusicPlaying = true;
 
-        // Hide volume controls initially
-        volumeOnButton.setVisibility(ImageView.INVISIBLE);
-        volumeOffButton.setVisibility(ImageView.INVISIBLE);
-
-        // Teacher settings button toggles sound buttons
-        teacherSettingButton.setOnClickListener(v -> {
-            if (volumeOnButton.getVisibility() == ImageView.VISIBLE) {
-                volumeOnButton.setVisibility(ImageView.INVISIBLE);
-                volumeOffButton.setVisibility(ImageView.INVISIBLE);
-            } else {
-                volumeOnButton.setVisibility(ImageView.VISIBLE);
-                volumeOffButton.setVisibility(ImageView.VISIBLE);
-            }
+        // Volume toggle
+        teacherSetting.setOnClickListener(v -> {
+            int visibility = volumeOn.getVisibility() == View.VISIBLE ? View.INVISIBLE : View.VISIBLE;
+            volumeOn.setVisibility(visibility);
+            volumeOff.setVisibility(visibility);
         });
 
-        volumeOnButton.setOnClickListener(v -> {
+        volumeOn.setOnClickListener(v -> {
             if (!isMusicPlaying) {
                 mediaPlayer.start();
                 isMusicPlaying = true;
             }
         });
 
-        volumeOffButton.setOnClickListener(v -> {
+        volumeOff.setOnClickListener(v -> {
             if (isMusicPlaying) {
                 mediaPlayer.pause();
                 isMusicPlaying = false;
             }
         });
 
-        // 🔹 Login button logic
-        loginButton.setOnClickListener(v -> {
-            String email = usernameInput.getText().toString().trim();
-            String password = passwordInput.getText().toString().trim();
+        // Show overlays
+        studentLoginBtn.setOnClickListener(v -> studentOverlay.setVisibility(View.VISIBLE));
+        facultyLoginBtn.setOnClickListener(v -> facultyOverlay.setVisibility(View.VISIBLE));
+        closeStudentOverlay.setOnClickListener(v -> studentOverlay.setVisibility(View.GONE));
+        closeFacultyOverlay.setOnClickListener(v -> facultyOverlay.setVisibility(View.GONE));
 
-            if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-                Toast.makeText(this, "Please enter both email and password.", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        // Forgot password
+        forgotStudentPassword.setOnClickListener(v -> sendResetLink(studentEmail.getText().toString()));
+        forgotFacultyPassword.setOnClickListener(v -> sendResetLink(facultyEmail.getText().toString()));
 
-            firebaseAuth.signInWithEmailAndPassword(email, password)
-                    .addOnSuccessListener(authResult -> {
-                        FirebaseUser user = firebaseAuth.getCurrentUser();
-                        if (user != null) {
-                            checkIfStudentOrTeacher(user.getUid());
-                        }
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-        });
+        // Login buttons
+        studentLoginConfirm.setOnClickListener(v ->
+                handleLogin(studentEmail.getText().toString(), studentPassword.getText().toString(), true));
+        facultyLoginConfirm.setOnClickListener(v ->
+                handleLogin(facultyEmail.getText().toString(), facultyPassword.getText().toString(), false));
 
-        // 🔹 Auto-login if user already authenticated
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser != null) {
-            checkIfStudentOrTeacher(currentUser.getUid());
-        }
+        exitBtn.setOnClickListener(v -> finishAffinity());
     }
 
-    private void checkIfStudentOrTeacher(String uid) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        FirebaseUser user = firebaseAuth.getCurrentUser();
+    private void sendResetLink(String email) {
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(this, "Enter email first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        firebaseAuth.sendPasswordResetEmail(email)
+                .addOnSuccessListener(aVoid ->
+                        Toast.makeText(this, "Reset link sent to email.", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
 
-        if (user == null) {
-            Toast.makeText(this, "No user logged in.", Toast.LENGTH_SHORT).show();
+    private void handleLogin(String email, String password, boolean isStudent) {
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+            Toast.makeText(this, "Please enter email and password.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String email = user.getEmail();
-        if (email == null || email.isEmpty()) {
-            Toast.makeText(this, "User email not found.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 1️⃣ Check if the user email exists in students collection
-        db.collection("students").whereEqualTo("email", email).get()
-                .addOnSuccessListener(studentQuery -> {
-                    if (!studentQuery.isEmpty()) {
-                        Toast.makeText(this, "Welcome, Student!", Toast.LENGTH_SHORT).show();
+        firebaseAuth.signInWithEmailAndPassword(email, password)
+                .addOnSuccessListener(authResult -> {
+                    if (isStudent) {
                         startActivity(new Intent(Homepage.this, Categorypage.class));
-                        finish();
+                        Toast.makeText(this, "Welcome Student!", Toast.LENGTH_SHORT).show();
                     } else {
-                        // 2️⃣ Not in students → check faculty
-                        db.collection("faculty").whereEqualTo("email", email).get()
-                                .addOnSuccessListener(facultyQuery -> {
-                                    if (!facultyQuery.isEmpty()) {
-                                        Toast.makeText(this, "Welcome, Teacher!", Toast.LENGTH_SHORT).show();
-                                        startActivity(new Intent(Homepage.this, TeacherSite.class));
-                                    } else {
-                                        Toast.makeText(this, "Account not found in either students or faculty.", Toast.LENGTH_SHORT).show();
-                                        firebaseAuth.signOut();
-                                    }
-                                    finish();
-                                })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(this, "Error checking faculty: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        startActivity(new Intent(Homepage.this, TeacherSite.class));
+                        Toast.makeText(this, "Welcome Faculty!", Toast.LENGTH_SHORT).show();
                     }
+                    finish();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error checking student: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (isMusicPlaying) {
-            mediaPlayer.pause();
-            isMusicPlaying = false;
-        }
+        if (isMusicPlaying) mediaPlayer.pause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!isMusicPlaying) mediaPlayer.start();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-        }
+        if (mediaPlayer != null) mediaPlayer.release();
     }
 }
