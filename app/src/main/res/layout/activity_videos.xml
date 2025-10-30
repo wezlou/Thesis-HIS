@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".VideosActivity">
 
-    <!-- 🌄 Background Image -->
+    <!-- Static Background Layer -->
     <ImageView
         android:id="@+id/backgroundImage"
         android:layout_width="match_parent"
@@ -14,15 +14,16 @@
         android:src="@drawable/vid_back"
         android:scaleType="centerCrop"
         android:adjustViewBounds="true"
-        android:alpha="0.9" />
+        android:contentDescription="Background"
+        android:alpha="0.9" /> <!-- Slight fade for readability -->
 
-    <!-- 🧭 Main Content -->
+    <!-- Main Content Overlay -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- 🔝 Top Bar -->
+        <!-- Top Navigation Bar -->
         <LinearLayout
             android:id="@+id/topNav"
             android:layout_width="match_parent"
@@ -32,16 +33,17 @@
             android:orientation="horizontal"
             android:paddingHorizontal="12dp">
 
-            <!-- ⬅️ Back -->
+            <!-- Back Button -->
             <ImageView
                 android:id="@+id/backbtn"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Back"
-                android:src="@drawable/baseline_arrow_circle_left_24"/>
+                android:src="@drawable/baseline_arrow_circle_left_24"
+                android:tint="@android:color/white" />
 
-            <!-- 🏷️ Title -->
+            <!-- Title -->
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -52,33 +54,31 @@
                 android:textColor="@android:color/white"
                 android:textSize="22sp" />
 
-            <!-- ⚙️ Settings -->
+            <!-- Settings -->
             <ImageView
                 android:id="@+id/settingsButton"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Settings"
-                android:src="@drawable/outline_apps_24"/>
+                android:src="@drawable/outline_apps_24"
+                android:tint="@android:color/white" />
         </LinearLayout>
 
-        <!-- 📜 Scrollable Video Thumbnails -->
+        <!-- Scrollable Videos -->
         <ScrollView
-            android:id="@+id/scrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:paddingBottom="100dp">
+            android:fillViewport="true">
 
             <LinearLayout
-                android:id="@+id/videoListContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- 🎞️ Video Cards -->
+                <!-- Video Cards -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
@@ -152,34 +152,5 @@
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
-
-    <!-- 🎥 Video Player Overlay (Hidden Initially) -->
-    <RelativeLayout
-        android:id="@+id/playerContainer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CC000000"
-        android:visibility="gone">
-
-        <com.google.android.exoplayer2.ui.PlayerView
-            android:id="@+id/player_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            app:use_controller="true"
-            app:resize_mode="fit"
-            android:keepScreenOn="true" />
-
-        <!-- ❌ Close Button -->
-        <ImageView
-            android:id="@+id/closePlayerBtn"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:layout_margin="16dp"
-            android:padding="10dp"
-            android:contentDescription="Close player" />
-
-    </RelativeLayout>
 
 </RelativeLayout>
