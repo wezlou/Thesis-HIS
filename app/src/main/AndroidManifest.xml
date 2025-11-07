@@ -27,6 +27,12 @@
         <activity android:name=".ResultActivity" android:exported="false"/>
         <activity android:name=".SplashColorActivity" android:exported="false"/>
         <activity android:name=".LoginAct" android:exported="false"/>
+        <activity android:name=".VideosActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+
+        <activity android:name=".VideoPlayerActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
         <!--  Activity definitions  -->
         <activity android:name=".TeacherTask" android:exported="false"/>
         <activity android:name=".Numberquiz" />
@@ -60,7 +66,6 @@
         <activity android:name=".ShapeActivity" android:exported="false"/>
         <activity android:name=".ColorActivity" android:exported="false"/>
         <activity android:name=".QuizActivity" android:exported="false"/>
-        <activity android:name=".VideosActivity" android:exported="false"/>
         <activity android:name=".StoriesActivity" android:exported="false"/>
         <activity android:name=".Categorypage" android:exported="false"/>
         <activity android:name=".StoryDetailActivity"/>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="10dp"
+    android:paddingHorizontal="8dp"
+    android:gravity="top">
+
+    <!-- Profile Avatar -->
+    <LinearLayout
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_avatar_circle"
+        android:gravity="center"
+        android:layout_marginEnd="10dp">
+
+        <TextView
+            android:id="@+id/commentUserInitial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="A"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <!-- Comment bubble -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_comment_bubble"
+        android:padding="10dp">
+
+        <TextView
+            android:id="@+id/commentUserName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Student Name"
+            android:textStyle="bold"
+            android:textColor="@color/primary"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/commentText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="This is a sample comment!"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/commentTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nov 5, 4:20 PM"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+</LinearLayout>
