@@ -4,86 +4,223 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.AspectRatioFrameLayout;
+import androidx.media3.ui.PlayerView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class VideosActivity extends AppCompatActivity {
 
-    String[] videoIds = {
-            "9_WBQISVHnw",
-            "hTqtGJwsJVE",
-            "Si5auXCYWDI",
-            "gFuEoxh5hd4",
-            "ZcX0gl-NFFg"
-    };
-
     private boolean isMuted = false;
     private MediaPlayer mediaPlayer;
-    private boolean isPausedBySystem = false; // 👈 track if music paused by lifecycle
+    private boolean isPausedBySystem = false;
+    private RequestQueue requestQueue;
+
+    private static final String PEXELS_API_KEY = "29zjLCRxRLBPHJ5l5E5VahUqCiDshSNWzDVTEyyYu3XUp9ZxIzx7eAla";
+
+    private RecyclerView recyclerView;
+    private RelativeLayout videoOverlay;
+    private ImageView closeOverlayBtn, backButton, settingsButton;
+    private PlayerView playerView;
+    private ProgressBar videoLoadingSpinner;
+
+    private ExoPlayer exoPlayer;
+    private final List<VideoItem> videoList = new ArrayList<>();
+    private VideoAdapter adapter;
+
+    private int currentPage = 1;
+    private String currentQuery = "kids fun";
+    private boolean isLoading = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videos);
 
-        // 🔊 Setup background music
+        // 🔹 Initialize views
+        videoLoadingSpinner = findViewById(R.id.videoLoading);
+        backButton = findViewById(R.id.backbtn);
+        settingsButton = findViewById(R.id.settingsButton);
+        recyclerView = findViewById(R.id.videoRecyclerView);
+        videoOverlay = findViewById(R.id.videoOverlay);
+        closeOverlayBtn = findViewById(R.id.closeOverlayBtn);
+        playerView = findViewById(R.id.playerView);
+
+        // 🔹 Setup background music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        ImageView backButton = findViewById(R.id.backbtn);
-        ImageView settingsButton = findViewById(R.id.settingsButton);
+        requestQueue = Volley.newRequestQueue(this);
 
-        // Back Button
+        // 🔹 Back button → go to main menu
         backButton.setOnClickListener(v -> {
-            stopMusic(); // stop music when leaving
-            Intent intent = new Intent(VideosActivity.this, Categorypage.class);
-            startActivity(intent);
+            stopMusic();
+            startActivity(new Intent(VideosActivity.this, Categorypage.class));
             finish();
         });
 
-        // Settings Popup
+        // 🔹 Settings menu
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
 
-        // Video Thumbnails
-        ImageView video1 = findViewById(R.id.video1);
-        ImageView video2 = findViewById(R.id.video2);
-        ImageView video3 = findViewById(R.id.video3);
-        ImageView video4 = findViewById(R.id.video4);
-        ImageView video5 = findViewById(R.id.video5);
+        // 🔹 Recycler setup
+        adapter = new VideoAdapter(this, videoList, this::playOverlayVideo);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        loadThumbnail(video1, videoIds[0]);
-        loadThumbnail(video2, videoIds[1]);
-        loadThumbnail(video3, videoIds[2]);
-        loadThumbnail(video4, videoIds[3]);
-        loadThumbnail(video5, videoIds[4]);
+        // 🔹 Infinite scroll
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                super.onScrolled(rv, dx, dy);
+                LinearLayoutManager lm = (LinearLayoutManager) rv.getLayoutManager();
+                if (!isLoading && lm != null && lm.findLastVisibleItemPosition() >= videoList.size() - 2) {
+                    loadKidVideos(currentQuery, ++currentPage);
+                }
+            }
+        });
 
-        video1.setOnClickListener(v -> openYouTube(videoIds[0]));
-        video2.setOnClickListener(v -> openYouTube(videoIds[1]));
-        video3.setOnClickListener(v -> openYouTube(videoIds[2]));
-        video4.setOnClickListener(v -> openYouTube(videoIds[3]));
-        video5.setOnClickListener(v -> openYouTube(videoIds[4]));
+        // 🔹 Overlay close button
+        closeOverlayBtn.setOnClickListener(v -> closeVideoOverlay());
+
+        // 🔹 Close overlay on outside tap
+        videoOverlay.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                closeVideoOverlay();
+                return true;
+            }
+            return false;
+        });
+
+        loadKidVideos(currentQuery, currentPage);
     }
 
-    private void loadThumbnail(ImageView imageView, String videoId) {
-        String url = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
-        Glide.with(this)
-                .load(url)
-                .centerCrop()
-                .into(imageView);
+    // 🔹 Load videos from Pexels API
+    private void loadKidVideos(String query, int page) {
+        isLoading = true;
+        String url = "https://api.pexels.com/videos/search?query=" + Uri.encode(query) + "&per_page=8&page=" + page;
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        JSONArray videos = response.getJSONArray("videos");
+                        for (int i = 0; i < videos.length(); i++) {
+                            JSONObject video = videos.getJSONObject(i);
+                            String thumbnail = video.getString("image");
+                            String videoUrl = video.getJSONArray("video_files").getJSONObject(0).getString("link");
+                            videoList.add(new VideoItem(thumbnail, videoUrl));
+                        }
+                        adapter.notifyDataSetChanged();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(this, "Error parsing videos", Toast.LENGTH_SHORT).show();
+                    }
+                    isLoading = false;
+                },
+                error -> {
+                    error.printStackTrace();
+                    Toast.makeText(this, "Failed to load videos", Toast.LENGTH_SHORT).show();
+                    isLoading = false;
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", PEXELS_API_KEY);
+                return headers;
+            }
+        };
+
+        requestQueue.add(request);
     }
 
-    private void openYouTube(String videoId) {
-        Intent intent = new Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://www.youtube.com/watch?v=" + videoId));
-        startActivity(intent);
+    // 🔹 Play video overlay with loading spinner
+    @androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
+    private void playOverlayVideo(String videoUrl) {
+        pauseMusic();
+
+        videoOverlay.setAlpha(0f);
+        videoOverlay.setVisibility(View.VISIBLE);
+        videoOverlay.animate().alpha(1f).setDuration(300).start();
+
+        videoLoadingSpinner.setVisibility(View.VISIBLE);
+
+        if (exoPlayer != null) {
+            exoPlayer.release();
+            exoPlayer = null;
+        }
+
+        exoPlayer = new ExoPlayer.Builder(this).build();
+        playerView.setPlayer(exoPlayer);
+
+        MediaItem mediaItem = MediaItem.fromUri(Uri.parse(videoUrl));
+        exoPlayer.setMediaItem(mediaItem);
+        playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT);
+
+        // 🔹 Handle player state for loading spinner
+        exoPlayer.addListener(new Player.Listener() {
+            @Override
+            public void onPlaybackStateChanged(int state) {
+                if (state == Player.STATE_BUFFERING) {
+                    videoLoadingSpinner.setVisibility(View.VISIBLE);
+                } else if (state == Player.STATE_READY || state == Player.STATE_ENDED) {
+                    videoLoadingSpinner.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onPlayerError(@NonNull PlaybackException error) {
+                videoLoadingSpinner.setVisibility(View.GONE);
+                Toast.makeText(VideosActivity.this, "Error playing video", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        exoPlayer.prepare();
+        exoPlayer.play();
     }
 
+    // 🔹 Close overlay and stop video
+    private void closeVideoOverlay() {
+        if (videoOverlay.getVisibility() == View.VISIBLE) {
+            videoOverlay.animate().alpha(0f).setDuration(300).withEndAction(() -> {
+                videoOverlay.setVisibility(View.GONE);
+                if (exoPlayer != null) {
+                    exoPlayer.stop();
+                    exoPlayer.release();
+                    exoPlayer = null;
+                }
+                resumeMusic();
+            }).start();
+        }
+    }
+
+    // 🔹 Settings popup
     private void showSettingsMenu(ImageView anchor) {
         PopupMenu popupMenu = new PopupMenu(this, anchor);
         popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
@@ -94,39 +231,29 @@ public class VideosActivity extends AppCompatActivity {
             if (title.contains("Mute")) {
                 muteDevice();
                 isMuted = true;
-                Toast.makeText(this, "Muted 🔇", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Unmute")) {
                 unmuteDevice();
                 isMuted = false;
-                Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Exit")) {
-                stopMusic();   // release player cleanly
-                finishAffinity(); // close app completely
+                stopMusic();
+                finishAffinity();
             }
             return true;
         });
-
         popupMenu.show();
     }
 
-    // 🔇 Mute background music
     private void muteDevice() {
-        if (mediaPlayer != null) {
-            mediaPlayer.setVolume(0f, 0f);
-        }
+        if (mediaPlayer != null) mediaPlayer.setVolume(0f, 0f);
     }
 
-    // 🔊 Unmute background music
     private void unmuteDevice() {
         if (mediaPlayer != null) {
             mediaPlayer.setVolume(1f, 1f);
-            if (!mediaPlayer.isPlaying()) {
-                mediaPlayer.start();
-            }
+            if (!mediaPlayer.isPlaying()) mediaPlayer.start();
         }
     }
 
-    // ⏸ Pause background music
     private void pauseMusic() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
@@ -134,7 +261,6 @@ public class VideosActivity extends AppCompatActivity {
         }
     }
 
-    // ▶️ Resume music when coming back
     private void resumeMusic() {
         if (mediaPlayer != null && isPausedBySystem && !isMuted) {
             try {
@@ -144,22 +270,6 @@ public class VideosActivity extends AppCompatActivity {
         }
     }
 
-    // 🧭 App lifecycle handling
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // App minimized or another activity comes up
-        pauseMusic();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // App returns to foreground
-        resumeMusic();
-    }
-
-    // ⏹️ Stop and release background music
     private void stopMusic() {
         if (mediaPlayer != null) {
             try {
@@ -171,8 +281,35 @@ public class VideosActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        pauseMusic();
+        if (exoPlayer != null) exoPlayer.pause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        resumeMusic();
+        if (exoPlayer != null && !exoPlayer.isPlaying()) exoPlayer.play();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         stopMusic();
+        if (exoPlayer != null) {
+            exoPlayer.release();
+            exoPlayer = null;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (videoOverlay != null && videoOverlay.getVisibility() == View.VISIBLE) {
+            closeVideoOverlay();
+        } else {
+            super.onBackPressed();
+        }
     }
 }
