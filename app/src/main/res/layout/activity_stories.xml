@@ -17,17 +17,13 @@
         android:orientation="horizontal"
         android:paddingHorizontal="12dp">
 
-        <!-- Back Button -->
         <ImageView
             android:id="@+id/backbtn"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
             android:src="@drawable/baseline_arrow_circle_left_24"
             android:tint="@android:color/white" />
 
-        <!-- Title -->
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -38,23 +34,64 @@
             android:textColor="@android:color/white"
             android:textSize="22sp" />
 
-        <!-- Settings -->
         <ImageView
             android:id="@+id/settingsButton"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Settings"
             android:src="@drawable/outline_apps_24"
             android:tint="@android:color/white" />
     </LinearLayout>
 
-    <!-- Scrollable Content Below Nav -->
+    <!-- 🍬 Candy Filter Bar -->
+    <HorizontalScrollView
+        android:id="@+id/filterScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/topNav"
+        android:scrollbars="none"
+        android:paddingVertical="8dp">
+
+        <LinearLayout
+            android:id="@+id/filterBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/filterAll"
+                style="@style/CandyFilterTab"
+                android:text="All" />
+
+            <TextView
+                android:id="@+id/filterAnimals"
+                style="@style/CandyFilterTab"
+                android:text="Animals" />
+
+            <TextView
+                android:id="@+id/filterFairyTales"
+                style="@style/CandyFilterTab"
+                android:text="Fairy Tales" />
+
+            <TextView
+                android:id="@+id/filterLessons"
+                style="@style/CandyFilterTab"
+                android:text="Lessons" />
+
+            <TextView
+                android:id="@+id/filterMorals"
+                style="@style/CandyFilterTab"
+                android:text="Morals" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Scrollable story list -->
     <ScrollView
         android:id="@+id/story_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/topNav"
+        android:layout_below="@id/filterScroll"
         android:fillViewport="true">
 
         <LinearLayout

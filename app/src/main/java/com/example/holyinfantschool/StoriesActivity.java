@@ -3,6 +3,9 @@ package com.example.holyinfantschool;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
@@ -18,6 +21,9 @@ public class StoriesActivity extends AppCompatActivity {
     private LinearLayout storyContainer;
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false;
+
+    private Animation bounceIn;
+
     private String[] storyTitles = {
             "The Tortoise and the Hare",
             "The Boy Who Cried Wolf",
@@ -83,7 +89,6 @@ public class StoriesActivity extends AppCompatActivity {
             "The colors of the rainbow once quarreled over who was most important. Green boasted of life and growth, blue of the sky and sea, red of passion, yellow of warmth, and so on. Suddenly, rain poured down, and lightning flashed. The colors huddled together in fear. Then the rain spoke, 'Stop fighting. Each of you is special, but together you create beauty. When the storm ends, you will shine as one.' And so the rainbow appeared, dazzling the world. Moral: Unity creates harmony and beauty."
     };
 
-
     private int[] storyImages = {
             R.drawable.tortoise_hare,
             R.drawable.boy_wolf,
@@ -107,22 +112,28 @@ public class StoriesActivity extends AppCompatActivity {
             R.drawable.rainbow_lesson
     };
 
+    // ✅ Added story categories for filtering
+    private String[] storyCategories = {
+            "Animals", "Lessons", "Animals", "Lessons", "Lessons",
+            "Animals", "Lessons", "Fairy Tales", "Fairy Tales", "Lessons",
+            "Fairy Tales", "Fairy Tales", "Fairy Tales", "Fairy Tales", "Fairy Tales",
+            "Lessons", "Lessons", "Lessons", "Lessons", "Morals"
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stories);
 
-        // ✅ Background music (looping)
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
         storyContainer = findViewById(R.id.story_container);
+        bounceIn = AnimationUtils.loadAnimation(this, R.anim.card_bounce_in);
 
         ImageView backButton = findViewById(R.id.backbtn);
         ImageView settingsButton = findViewById(R.id.settingsButton);
 
-        // Back navigates to Categorypage (same behavior as Videos)
         backButton.setOnClickListener(v -> {
             stopMusic();
             Intent intent = new Intent(StoriesActivity.this, Categorypage.class);
@@ -132,9 +143,8 @@ public class StoriesActivity extends AppCompatActivity {
 
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
 
-        for (int i = 0; i < storyTitles.length; i++) {
-            addStoryCard(storyTitles[i], storyContents[i], storyImages[i]);
-        }
+        displayFilteredStories(null);
+        setupFilters();
     }
 
     private void addStoryCard(String title, String content, int imageRes) {
@@ -143,43 +153,44 @@ public class StoriesActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        cardParams.setMargins(0, 0, 0, 24);
+        cardParams.setMargins(0, 0, 0, 28);
         card.setLayoutParams(cardParams);
-        card.setRadius(20);
-        card.setCardElevation(8);
-        card.setCardBackgroundColor(ContextCompat.getColor(this, android.R.color.white));
+        card.setRadius(40);
+        card.setCardElevation(12);
         card.setUseCompatPadding(true);
+        card.setBackgroundResource(R.drawable.candy_card_background);
 
         LinearLayout innerLayout = new LinearLayout(this);
         innerLayout.setOrientation(LinearLayout.VERTICAL);
+        innerLayout.setPadding(0, 0, 0, 16);
 
-        // Image
         ImageView imageView = new ImageView(this);
         imageView.setImageResource(imageRes);
         imageView.setAdjustViewBounds(true);
         imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                400
-        );
-        imageView.setLayoutParams(imageParams);
+        imageView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 400));
 
-        // Title
         TextView titleView = new TextView(this);
         titleView.setText(title);
-        titleView.setTextSize(20);
-        titleView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_blue_dark));
+        titleView.setTextSize(22);
+        titleView.setTextColor(ContextCompat.getColor(this, R.color.candy_pink_dark));
+        titleView.setPadding(20, 16, 20, 4);
+        titleView.setTypeface(null, android.graphics.Typeface.BOLD);
 
-        // Preview
         TextView previewView = new TextView(this);
-        previewView.setText(content.length() > 80 ? content.substring(0, 80) + "..." : content);
+        previewView.setText(content.length() > 90 ? content.substring(0, 90) + "..." : content);
         previewView.setTextSize(16);
-        previewView.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray));
+        previewView.setTextColor(ContextCompat.getColor(this, R.color.candy_text_soft));
+        previewView.setPadding(20, 0, 20, 16);
 
         innerLayout.addView(imageView);
         innerLayout.addView(titleView);
         innerLayout.addView(previewView);
         card.addView(innerLayout);
+
+        // 🍬 Apply animation
+        card.startAnimation(bounceIn);
 
         card.setOnClickListener(v -> {
             Intent intent = new Intent(StoriesActivity.this, StoryDetailActivity.class);
@@ -190,6 +201,49 @@ public class StoriesActivity extends AppCompatActivity {
         });
 
         storyContainer.addView(card);
+    }
+
+    private void setupFilters() {
+        TextView filterAll = findViewById(R.id.filterAll);
+        TextView filterAnimals = findViewById(R.id.filterAnimals);
+        TextView filterFairyTales = findViewById(R.id.filterFairyTales);
+        TextView filterLessons = findViewById(R.id.filterLessons);
+        TextView filterMorals = findViewById(R.id.filterMorals);
+
+        View.OnClickListener listener = v -> {
+            resetFilterColors();
+            ((TextView) v).setBackgroundResource(R.drawable.candy_filter_tab_selected);
+            String selected = ((TextView) v).getText().toString();
+            displayFilteredStories(selected.equals("All") ? null : selected);
+        };
+
+        filterAll.setOnClickListener(listener);
+        filterAnimals.setOnClickListener(listener);
+        filterFairyTales.setOnClickListener(listener);
+        filterLessons.setOnClickListener(listener);
+        filterMorals.setOnClickListener(listener);
+
+        filterAll.setBackgroundResource(R.drawable.candy_filter_tab_selected);
+    }
+
+    private void resetFilterColors() {
+        int[] filterIds = {
+                R.id.filterAll, R.id.filterAnimals, R.id.filterFairyTales,
+                R.id.filterLessons, R.id.filterMorals
+        };
+        for (int id : filterIds) {
+            TextView tab = findViewById(id);
+            tab.setBackgroundResource(R.drawable.candy_filter_tab_unselected);
+        }
+    }
+
+    private void displayFilteredStories(String category) {
+        storyContainer.removeAllViews();
+        for (int i = 0; i < storyTitles.length; i++) {
+            if (category == null || storyCategories[i].equals(category)) {
+                addStoryCard(storyTitles[i], storyContents[i], storyImages[i]);
+            }
+        }
     }
 
     private void showSettingsMenu(ImageView anchor) {
