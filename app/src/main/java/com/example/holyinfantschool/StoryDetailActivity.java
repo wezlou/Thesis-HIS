@@ -1,15 +1,22 @@
 package com.example.holyinfantschool;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.PopupMenu;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,9 +27,14 @@ public class StoryDetailActivity extends AppCompatActivity {
     private TextToSpeech tts;
     private String storyContent;
     private MediaPlayer mediaPlayer;
-    private boolean isMuted = false; // track mute state
-    private float currentVolume = 1f; // 0.0 - 1.0
+    private boolean isMuted = false;
+    private float currentVolume = 1f;
     private final Handler handler = new Handler();
+
+    private Button playButton;
+    private Animation bounceAnim;
+    private ScrollView scrollView;
+    private TextView contentView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,19 +42,23 @@ public class StoryDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_story_detail);
 
         TextView titleView = findViewById(R.id.storyTitle);
-        TextView contentView = findViewById(R.id.storyContent);
-        Button playButton = findViewById(R.id.playButton);
+        contentView = findViewById(R.id.storyContent);
+        playButton = findViewById(R.id.playButton);
         ImageView backButton = findViewById(R.id.backbtn);
         ImageView settingsButton = findViewById(R.id.settingsButton);
+        scrollView = findViewById(R.id.storyScroll);
 
-        // ✅ Get story data from intent
+        // 🍬 Candy-style bounce animation for buttons
+        bounceAnim = AnimationUtils.loadAnimation(this, R.anim.button_bounce);
+
+        // ✅ Get story data
         String storyTitle = getIntent().getStringExtra("title");
         storyContent = getIntent().getStringExtra("content");
 
         titleView.setText(storyTitle);
         contentView.setText(storyContent);
 
-        // ✅ Setup background music
+        // ✅ Background music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
@@ -52,47 +68,113 @@ public class StoryDetailActivity extends AppCompatActivity {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(Locale.ENGLISH);
 
-                // Listen for TTS progress
                 tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                     @Override
                     public void onStart(String utteranceId) {
-                        runOnUiThread(() -> fadeOutMusic()); // fade out when TTS starts
+                        runOnUiThread(() -> {
+                            fadeOutMusic();
+                            playButton.startAnimation(bounceAnim);
+                            startBottomUpTextAnimation();
+                            Toast.makeText(StoryDetailActivity.this, "🎧 Let’s listen!", Toast.LENGTH_SHORT).show();
+                        });
                     }
 
                     @Override
                     public void onDone(String utteranceId) {
-                        runOnUiThread(() -> fadeInMusic()); // fade in when TTS finishes
+                        runOnUiThread(() -> {
+                            fadeInMusic();
+                            playButton.clearAnimation();
+                        });
                     }
 
                     @Override
                     public void onError(String utteranceId) {
-                        runOnUiThread(() -> fadeInMusic()); // also fade in on error
+                        runOnUiThread(() -> {
+                            fadeInMusic();
+                            playButton.clearAnimation();
+                        });
                     }
                 });
             }
         });
 
-        // ✅ Play button (TTS reading)
+        // ✅ Play / Listen button
         playButton.setOnClickListener(v -> {
             if (tts != null) {
-                fadeOutMusic(); // fade out immediately before speaking
+                fadeOutMusic();
+                contentView.setText(""); // reset text
+                startBottomUpReveal(contentView); // start "bottom-up" reveal
                 tts.speak(storyContent, TextToSpeech.QUEUE_FLUSH, null, "STORY_TTS");
             }
         });
 
-        // ✅ Back Button
+        // ✅ Back button
         backButton.setOnClickListener(v -> {
-            stopMusic(); // stop music when leaving
-            finish();    // go back
+            stopMusic();
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
-        // ✅ Settings Button Popup
+        // ✅ Settings
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
     }
 
-    // ==============================
-    // 🔧 Settings Menu
-    // ==============================
+    // 🍭 Animate text appearing from bottom upwards
+    private void startBottomUpTextAnimation() {
+        contentView.setAlpha(0f);
+        contentView.setTranslationY(300f); // start lower (off-screen-ish)
+
+        // fade + slide up animation
+        contentView.animate()
+                .translationY(0f)
+                .alpha(1f)
+                .setInterpolator(new DecelerateInterpolator())
+                .setDuration(1500)
+                .start();
+
+        // after fade-in, start smooth scroll upward like reading
+        handler.postDelayed(() -> smoothScrollStory(scrollView), 1500);
+    }
+
+    // 🎠 Smooth scroll animation (bottom to top)
+    private void smoothScrollStory(ScrollView scrollView) {
+        int fullHeight = scrollView.getChildAt(0).getHeight();
+        int visibleHeight = scrollView.getHeight();
+        int scrollRange = fullHeight - visibleHeight;
+
+        if (scrollRange <= 0) return;
+
+        ValueAnimator animator = ValueAnimator.ofInt(scrollRange, 0);
+        animator.setDuration(20000); // 20s scrolling time
+        animator.addUpdateListener(animation ->
+                scrollView.scrollTo(0, (int) animation.getAnimatedValue()));
+        animator.start();
+    }
+
+    private void startBottomUpReveal(TextView contentView) {
+        String story = storyContent; // your full story text
+        contentView.setText("");      // start empty
+        final int totalLength = story.length();
+        final int delay = 50; // delay per character (ms)
+
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            int index = 0;
+            @Override
+            public void run() {
+                if (index < totalLength) {
+                    // append next character at bottom
+                    contentView.append(String.valueOf(story.charAt(index)));
+                    // ensure cursor stays at bottom
+                    scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+                    index++;
+                    handler.postDelayed(this, delay);
+                }
+            }
+        };
+        runnable.run();
+    }
+
     private void showSettingsMenu(ImageView anchor) {
         PopupMenu popupMenu = new PopupMenu(this, anchor);
         popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
@@ -103,36 +185,28 @@ public class StoryDetailActivity extends AppCompatActivity {
             if (title.contains("Mute")) {
                 muteDevice();
                 isMuted = true;
-                Toast.makeText(this, "Muted 🔇", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "🔇 Music Off", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Unmute")) {
                 unmuteDevice();
                 isMuted = false;
-                Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "🔊 Music On", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Exit")) {
-                stopMusic();   // release player cleanly
-                finishAffinity(); // close app completely
+                stopMusic();
+                finishAffinity();
             }
             return true;
         });
-
         popupMenu.show();
     }
 
-    // ==============================
-    // 🔊 Music Control
-    // ==============================
     private void muteDevice() {
-        if (mediaPlayer != null) {
-            mediaPlayer.setVolume(0f, 0f);
-        }
+        if (mediaPlayer != null) mediaPlayer.setVolume(0f, 0f);
     }
 
     private void unmuteDevice() {
         if (mediaPlayer != null) {
             mediaPlayer.setVolume(1f, 1f);
-            if (!mediaPlayer.isPlaying()) {
-                mediaPlayer.start();
-            }
+            if (!mediaPlayer.isPlaying()) mediaPlayer.start();
         }
     }
 
@@ -144,10 +218,10 @@ public class StoryDetailActivity extends AppCompatActivity {
                     if (currentVolume > 0.1f) {
                         currentVolume -= 0.1f;
                         mediaPlayer.setVolume(currentVolume, currentVolume);
-                        handler.postDelayed(this, 100); // every 100ms
+                        handler.postDelayed(this, 100);
                     } else {
                         mediaPlayer.pause();
-                        currentVolume = 1f; // reset for next play
+                        currentVolume = 1f;
                     }
                 }
             }, 100);
@@ -164,7 +238,7 @@ public class StoryDetailActivity extends AppCompatActivity {
                     if (currentVolume < 1f) {
                         currentVolume += 0.1f;
                         mediaPlayer.setVolume(currentVolume, currentVolume);
-                        handler.postDelayed(this, 100); // every 100ms
+                        handler.postDelayed(this, 100);
                     }
                 }
             }, 100);
