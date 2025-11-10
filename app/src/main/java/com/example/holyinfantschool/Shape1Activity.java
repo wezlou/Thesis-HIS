@@ -83,7 +83,7 @@ public class Shape1Activity extends AppCompatActivity {
         // ⬅️ Back button
         backButton.setOnClickListener(v -> {
             stopMusic();
-            Intent intent = new Intent(this, MainActivity.class);
+            Intent intent = new Intent(this, QuizActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             finish();
