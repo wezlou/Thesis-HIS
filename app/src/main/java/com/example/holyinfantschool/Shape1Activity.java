@@ -77,10 +77,8 @@ public class Shape1Activity extends AppCompatActivity {
         settingsButton = findViewById(R.id.settingsButton);
         backButton = findViewById(R.id.backbtn);
 
-        // 🎛 Settings button popup
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
 
-        // ⬅️ Back button
         backButton.setOnClickListener(v -> {
             stopMusic();
             Intent intent = new Intent(this, QuizActivity.class);
