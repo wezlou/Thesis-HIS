@@ -1,7 +1,6 @@
 package com.example.holyinfantschool;
 
 import android.os.Bundle;
-import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -16,13 +15,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        // TOTAL FIX FOR INFINIX/MTK:
-        // Disable HW acceleration BEFORE view is created
-        getWindow().setFlags(
-                android.view.WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                android.view.WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-        );
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_youtube_player);
 
@@ -30,16 +22,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.youtubeWebView);
 
-        // Force SOFTWARE rendering (critical for Infinix)
-        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
 
         WebSettings ws = webView.getSettings();
         ws.setJavaScriptEnabled(true);
         ws.setDomStorageEnabled(true);
+        ws.setMediaPlaybackRequiresUserGesture(false);
         ws.setLoadWithOverviewMode(true);
         ws.setUseWideViewPort(true);
 
-        ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient());
@@ -55,7 +49,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 + "</iframe>"
                 + "</body></html>";
 
-        webView.loadData(html, "text/html", "utf-8");
+        webView.loadDataWithBaseURL("https://www.youtube-nocookie.com", html, "text/html", "UTF-8", null);
     }
 
     @Override
@@ -64,13 +58,5 @@ public class VideoPlayerActivity extends AppCompatActivity {
             webView.destroy();
         }
         super.onDestroy();
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack())
-            webView.goBack();
-        else
-            super.onBackPressed();
     }
 }
