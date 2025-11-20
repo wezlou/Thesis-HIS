@@ -2,13 +2,13 @@ package com.example.holyinfantschool;
 
 public class VideoItem {
     private final String thumbnail;
-    private final String videoUrl;
+    private final String videoId;
 
-    public VideoItem(String thumbnail, String videoUrl) {
+    public VideoItem(String thumbnail, String videoId) {
         this.thumbnail = thumbnail;
-        this.videoUrl = videoUrl;
+        this.videoId = videoId;
     }
 
     public String getThumbnail() { return thumbnail; }
-    public String getVideoUrl() { return videoUrl; }
+    public String getVideoId() { return videoId; }
 }

@@ -1,6 +1,7 @@
 package com.example.holyinfantschool;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,18 +15,13 @@ import com.bumptech.glide.Glide;
 import java.util.List;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VH> {
-    public interface OnVideoClick {
-        void onVideoClick(String videoUrl);
-    }
 
     private final Context ctx;
     private final List<VideoItem> list;
-    private final OnVideoClick listener;
 
-    public VideoAdapter(Context ctx, List<VideoItem> list, OnVideoClick listener) {
+    public VideoAdapter(Context ctx, List<VideoItem> list) {
         this.ctx = ctx;
         this.list = list;
-        this.listener = listener;
     }
 
     @NonNull
@@ -40,18 +36,21 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VH> {
         VideoItem it = list.get(position);
         Glide.with(ctx).load(it.getThumbnail()).centerCrop().into(holder.thumbnail);
 
-        // ensure uniform height (just in case)
-        holder.thumbnail.getLayoutParams().height = (int) (200 * ctx.getResources().getDisplayMetrics().density);
-        holder.thumbnail.requestLayout();
-
-        holder.itemView.setOnClickListener(v -> listener.onVideoClick(it.getVideoUrl()));
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(ctx, VideoPlayerActivity.class);
+            intent.putExtra("videoId", it.getVideoId());
+            ctx.startActivity(intent);
+        });
     }
 
     @Override
-    public int getItemCount() { return list.size(); }
+    public int getItemCount() {
+        return list.size();
+    }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumbnail;
+
         VH(@NonNull View itemView) {
             super(itemView);
             thumbnail = itemView.findViewById(R.id.videoThumbnail);
