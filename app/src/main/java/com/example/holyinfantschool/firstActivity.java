@@ -2,9 +2,11 @@ package com.example.holyinfantschool;
 
 import android.content.Intent;
 import android.graphics.PorterDuff;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,45 +18,45 @@ public class firstActivity extends AppCompatActivity {
     private List<Question> questions;
     private int currentIndex = 0;
 
-    private TextView levelText, questionText;
+    private TextView questionText;
     private ImageView artImage;
     private LinearLayout choicesLayout;
+
+    // 🎵 Music
+    private MediaPlayer mediaPlayer;
+    private boolean isMuted = false;
+    private boolean isPausedBySystem = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_first);
 
-        // UI refs
-        levelText = findViewById(R.id.levelText);
         questionText = findViewById(R.id.questionText);
         artImage = findViewById(R.id.appleImage);
         choicesLayout = findViewById(R.id.choicesLayout);
 
-        // Buttons
         ImageView backBtn = findViewById(R.id.backbtn);
         ImageView settingsBtn = findViewById(R.id.settingsButton);
 
-        // Back → Category page
-        backBtn.setOnClickListener(v -> {
-            // 🔀 Shuffle all questions before leaving
-            GameSession.setQuestions(QuestionBank.getShuffledQuestions());
+        // 🎵 Start music
+        setupMusic();
 
-            // Go back to Category page
-            Intent intent = new Intent(this, Categorypage.class);
+        // 🔙 Back button
+        backBtn.setOnClickListener(v -> {
+            stopMusic();
+            GameSession.setQuestions(QuestionBank.getShuffledQuestions());
+            Intent intent = new Intent(this, QuizActivity.class);
             startActivity(intent);
             finish();
         });
 
-        // Settings (placeholder)
-        settingsBtn.setOnClickListener(v -> {
-            // TODO: Open settings page if you create one
-        });
+        // ⚙️ Settings menu
+        settingsBtn.setOnClickListener(v -> showSettingsMenu(settingsBtn));
 
-        // Get currentIndex
+        // Load question index
         currentIndex = getIntent().getIntExtra("CURRENT_INDEX", 0);
 
-        // Load question bank once at the start
         if (GameSession.getQuestions() == null) {
             GameSession.setQuestions(QuestionBank.getQuestions());
         }
@@ -65,7 +67,7 @@ public class firstActivity extends AppCompatActivity {
 
     private void showQuestion() {
         if (currentIndex >= questions.size()) {
-            // Finished all questions → go to final splash
+            stopMusic();
             Intent intent = new Intent(this, finalscorecolorsplash.class);
             startActivity(intent);
             finish();
@@ -74,12 +76,10 @@ public class firstActivity extends AppCompatActivity {
 
         Question q = questions.get(currentIndex);
 
-        levelText.setText("LEVEL " + (currentIndex + 1));
         questionText.setText(q.getText());
         artImage.setImageResource(q.getImageRes());
         artImage.clearColorFilter();
 
-        // Clear old choices
         choicesLayout.removeAllViews();
 
         for (int i = 0; i < q.getAnswers().size(); i++) {
@@ -113,12 +113,11 @@ public class firstActivity extends AppCompatActivity {
                     }
                 }
 
-                // ✅ Pass both outline + color to result
                 GameFlowController.navigateToResult(
                         firstActivity.this,
                         ans.isCorrect(),
-                        q.getImageRes(),                           // outline image
-                        getColorFromRes(ans.getImageRes()),        // fill color
+                        q.getImageRes(),
+                        getColorFromRes(ans.getImageRes()),
                         "firstActivity",
                         currentIndex + 1
                 );
@@ -128,26 +127,90 @@ public class firstActivity extends AppCompatActivity {
         }
     }
 
-    // Map button image resources to actual Android colors
+    // 🎨 Color Mapping
     private int getColorFromRes(int resId) {
-        if (resId == R.drawable.img_34) {
-            return android.R.color.holo_red_dark; // red
-        } else if (resId == R.drawable.img_38) {
-            return android.R.color.holo_blue_dark; // blue
-        } else if (resId == R.drawable.btnmango) {
-            return R.color.bananaYellow; // yellow
-        } else if (resId == R.drawable.img_33) {
-            return android.R.color.holo_purple; // pink
-        } else if (resId == R.drawable.img_66) {
-            return android.R.color.holo_green_dark; // green
-        } else if (resId == R.drawable.purplebtn) {
-            return android.R.color.holo_purple; // purple
-        } else if (resId == R.drawable.orangebtn) {
-            return android.R.color.holo_orange_dark; // orange
-        } else if (resId == R.drawable.brownbtn) {
-            return R.color.brownColor; // custom brown
-        } else {
-            return android.R.color.black; // default
+        if (resId == R.drawable.img_34) return android.R.color.holo_red_dark;
+        else if (resId == R.drawable.img_38) return android.R.color.holo_blue_dark;
+        else if (resId == R.drawable.btnmango) return R.color.bananaYellow;
+        else if (resId == R.drawable.img_33) return android.R.color.holo_purple;
+        else if (resId == R.drawable.img_66) return android.R.color.holo_green_dark;
+        else if (resId == R.drawable.purplebtn) return android.R.color.holo_purple;
+        else if (resId == R.drawable.orangebtn) return android.R.color.holo_orange_dark;
+        else if (resId == R.drawable.brownbtn) return R.color.brownColor;
+        else return android.R.color.black;
+    }
+
+    // -------------------------------------------------------
+    // 🎵 MUSIC HANDLING
+    // -------------------------------------------------------
+    private void setupMusic() {
+        mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
+        mediaPlayer.setLooping(true);
+        mediaPlayer.start();
+    }
+
+    private void muteMusic() {
+        isMuted = true;
+        if (mediaPlayer != null) mediaPlayer.setVolume(0f, 0f);
+    }
+
+    private void unmuteMusic() {
+        isMuted = false;
+        if (mediaPlayer != null) mediaPlayer.setVolume(1f, 1f);
+    }
+
+    private void stopMusic() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            isPausedBySystem = true;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mediaPlayer != null && isPausedBySystem && !isMuted) {
+            mediaPlayer.start();
+            isPausedBySystem = false;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopMusic();
+    }
+
+    // -------------------------------------------------------
+    // ⚙️ SETTINGS MENU
+    // -------------------------------------------------------
+    private void showSettingsMenu(ImageView anchor) {
+        PopupMenu popupMenu = new PopupMenu(this, anchor);
+        popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
+        popupMenu.getMenu().add("Exit ❌");
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            String title = item.getTitle().toString();
+
+            if (title.contains("Mute")) muteMusic();
+            else if (title.contains("Unmute")) unmuteMusic();
+            else if (title.contains("Exit")) {
+                stopMusic();
+                finishAffinity();
+            }
+            return true;
+        });
+
+        popupMenu.show();
     }
 }

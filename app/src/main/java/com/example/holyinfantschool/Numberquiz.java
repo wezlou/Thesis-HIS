@@ -26,7 +26,7 @@ public class Numberquiz extends AppCompatActivity {
     private FrameLayout animalsContainer, animalsLayer, feedbackOverlay;
     private Button option1, option2, option3;
     private ImageView backgroundScene, backBtn, settingsButton;
-    private TextView questionText, levelText;
+    private TextView questionText;
 
     private final Random random = new Random();
     private int currentLevel = 1;
@@ -83,7 +83,6 @@ public class Numberquiz extends AppCompatActivity {
         option3 = findViewById(R.id.option3);
         backgroundScene = findViewById(R.id.backgroundScene);
         questionText = findViewById(R.id.questionText);
-        levelText = findViewById(R.id.levelText);
         backBtn = findViewById(R.id.backbtn);
         settingsButton = findViewById(R.id.settingsButton);
 
@@ -105,7 +104,6 @@ public class Numberquiz extends AppCompatActivity {
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
     }
 
-    // ================= GAME LOGIC =================
 
     private void loadLevel(int level) {
         if (level > 15) {
@@ -127,7 +125,6 @@ public class Numberquiz extends AppCompatActivity {
 
         correctAnswer = 3 + random.nextInt(6);
         questionText.setText("How many " + animalName + " are here?");
-        levelText.setText("Level " + level);
 
         for (int i = 0; i < correctAnswer; i++) {
             ImageView animal = new ImageView(this);

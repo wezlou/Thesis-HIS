@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@drawable/bg_candy_gradient"
     android:padding="18dp">
 
@@ -23,7 +24,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/baseline_arrow_circle_left_24"
-            android:tint="@android:color/white" />
+            app:tint="#ffffff" />
 
         <TextView
             android:layout_width="0dp"
@@ -41,7 +42,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/outline_apps_24"
-            android:tint="@android:color/white" />
+            app:tint="#ffffff" />
     </LinearLayout>
 
     <!-- 🧁 Story Title -->

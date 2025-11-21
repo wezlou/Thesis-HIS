@@ -1,94 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/studentTaskRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg"
-    tools:context=".studenttask">
+    android:background="@drawable/bg">
 
-    <!-- New Top Navigation -->
+    <!-- Top App Bar -->
     <LinearLayout
-        android:id="@+id/topNav"
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:background="@color/default_icon"
+        android:layout_height="wrap_content"
+        android:background="@color/primary"
+        android:elevation="6dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:padding="16dp">
 
-        <!-- Back Button -->
         <ImageView
             android:id="@+id/backbtn"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:src="@drawable/baseline_arrow_circle_left_24"
-            android:tint="@android:color/white" />
+            app:tint="@android:color/white" />
 
-        <!-- Title + Subtitle -->
-        <LinearLayout
+        <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="vertical">
+            android:text="Student Tasks"
+            android:textColor="@android:color/white"
+            android:textSize="20sp" />
 
-            <!-- Main Title -->
-            <TextView
-                android:id="@+id/titleText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-black"
-                android:gravity="center"
-                android:text="Your Task"
-                android:textColor="@android:color/white"
-                android:textSize="24sp" />
-
-            <!-- Subtitle -->
-            <TextView
-                android:id="@+id/subTitleText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
-                android:gravity="center"
-                android:text="View all assigned tasks and materials"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-
-        </LinearLayout>
-
-        <!-- Settings -->
         <ImageView
             android:id="@+id/settingsButton"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Settings"
-            android:src="@drawable/outline_apps_24"
-            android:tint="@android:color/white" />
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/settingg"
+            app:tint="@android:color/white" />
     </LinearLayout>
 
     <!-- Filter Tabs -->
     <HorizontalScrollView
         android:id="@+id/filterScroll"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="none"
-        app:layout_constraintTop_toBottomOf="@+id/topNav"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_below="@id/topBar"
+        android:fillViewport="true"
+        android:padding="8dp"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/filterAll"
@@ -122,40 +88,41 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- Content -->
-    <FrameLayout
-        android:id="@+id/contentFrame"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/filterScroll"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+    <!-- Scrollable List -->
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomSpacer"
+        android:layout_below="@id/filterScroll"
+        android:fillViewport="true"
+        android:padding="8dp">
 
-        <!-- Task List -->
-        <ScrollView
+        <LinearLayout
+            android:id="@+id/assignedTasksContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="12dp"
-            android:fillViewport="true">
-
-            <LinearLayout
-                android:id="@+id/assignedTasksContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-        </ScrollView>
-
-        <!-- Empty Message -->
-        <TextView
-            android:id="@+id/emptyMessage"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="No items in this category"
-            android:textColor="@android:color/darker_gray"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
-    </FrameLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+            android:orientation="vertical"
+            android:paddingBottom="100dp" />
+    </ScrollView>
+
+    <!-- Empty Message -->
+    <TextView
+        android:id="@+id/emptyMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:text="No tasks or announcements yet 📭"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <!-- Spacer -->
+    <View
+        android:id="@+id/bottomSpacer"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:layout_alignParentBottom="true" />
+
+</RelativeLayout>

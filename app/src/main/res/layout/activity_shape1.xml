@@ -290,7 +290,7 @@
         android:id="@+id/level"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Level X"
+        android:text=""
         android:textColor="@color/image_icon"
         android:textSize="28sp"
         android:textStyle="bold"
