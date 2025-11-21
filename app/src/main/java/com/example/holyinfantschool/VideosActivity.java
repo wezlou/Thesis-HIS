@@ -4,11 +4,8 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -38,14 +35,16 @@ public class VideosActivity extends AppCompatActivity {
 
     private RequestQueue requestQueue;
 
-    private static final String YT_API_KEY = "AIzaSyDV4iG86oIUQNhKpNAOw02M11zJA8WwIiI";
+    // Keep your API key secure in production (don't hardcode).
+    private static final String YT_API_KEY =
+            "AIzaSyDV4iG86oIUQNhKpNAOw02M11zJA8WwIiI";
 
     private List<VideoItem> videoList = new ArrayList<>();
     private VideoAdapter adapter;
 
     private boolean isLoading = false;
     private String nextPageToken = "";
-    private String query = "kids fun videos";
+    private String query = "colors for kids";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,13 +59,14 @@ public class VideosActivity extends AppCompatActivity {
 
         setupMusic();
         setupButtons();
+        setupFilters();
         setupRecycler();
 
         loadYouTubeVideos();
     }
 
     // -------------------------------------------------------
-    // YOUTUBE API FETCHER
+    // FETCH YOUTUBE VIDEOS
     // -------------------------------------------------------
     private void loadYouTubeVideos() {
         if (isLoading) return;
@@ -90,15 +90,22 @@ public class VideosActivity extends AppCompatActivity {
 
                         for (int i = 0; i < items.length(); i++) {
                             JSONObject item = items.getJSONObject(i);
+                            JSONObject idObj = item.getJSONObject("id");
+                            if (!idObj.has("videoId")) continue;
 
-                            String videoId = item.getJSONObject("id").getString("videoId");
-
-                            String thumb = item.getJSONObject("snippet")
+                            String videoId = idObj.getString("videoId");
+                            JSONObject snippet = item.getJSONObject("snippet");
+                            String title = snippet.optString("title", "Untitled");
+                            // thumbnail fallback safe access
+                            String thumb = snippet
                                     .getJSONObject("thumbnails")
-                                    .getJSONObject("high")
-                                    .getString("url");
+                                    .optJSONObject("high") != null
+                                    ? snippet.getJSONObject("thumbnails").getJSONObject("high").optString("url", "")
+                                    : snippet.getJSONObject("thumbnails").optJSONObject("default") != null
+                                    ? snippet.getJSONObject("thumbnails").getJSONObject("default").optString("url", "")
+                                    : "";
 
-                            videoList.add(new VideoItem(thumb, videoId));
+                            videoList.add(new VideoItem(thumb, videoId, title));
                         }
 
                         adapter.notifyDataSetChanged();
@@ -117,11 +124,14 @@ public class VideosActivity extends AppCompatActivity {
         requestQueue.add(request);
     }
 
-    // -------------------------------------------------------
-    // RECYCLER + INFINITE SCROLL
-    // -------------------------------------------------------
     private void setupRecycler() {
-        adapter = new VideoAdapter(this, videoList);
+        adapter = new VideoAdapter(this, videoList, videoId -> {
+            // open dedicated player activity (clean)
+            Intent i = new Intent(VideosActivity.this, VideoPlayerActivity.class);
+            i.putExtra("videoId", videoId);
+            startActivity(i);
+        });
+
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
@@ -129,19 +139,36 @@ public class VideosActivity extends AppCompatActivity {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
                 super.onScrolled(rv, dx, dy);
+
                 LinearLayoutManager lm = (LinearLayoutManager) rv.getLayoutManager();
 
-                if (!isLoading && lm != null && lm.findLastVisibleItemPosition() >= videoList.size() - 2) {
+                if (!isLoading && lm != null &&
+                        lm.findLastVisibleItemPosition() >= videoList.size() - 2) {
                     loadYouTubeVideos();
                 }
             }
         });
     }
 
-    // -------------------------------------------------------
-    // SETTINGS MENU (mute / unmute)
-    // -------------------------------------------------------
+    private void setupFilters() {
+        findViewById(R.id.filter_colors).setOnClickListener(v -> applyFilter("colors"));
+        findViewById(R.id.filter_alphabets).setOnClickListener(v -> applyFilter("alphabets"));
+        findViewById(R.id.filter_numbers).setOnClickListener(v -> applyFilter("numbers"));
+        findViewById(R.id.filter_animals).setOnClickListener(v -> applyFilter("animals"));
+        findViewById(R.id.filter_songs).setOnClickListener(v -> applyFilter("kids songs"));
+        findViewById(R.id.filter_cartoons).setOnClickListener(v -> applyFilter("cartoons"));
+    }
+
+    private void applyFilter(String keyword) {
+        query = keyword + " for kids";
+        nextPageToken = "";
+        videoList.clear();
+        adapter.notifyDataSetChanged();
+        loadYouTubeVideos();
+    }
+
     private void setupButtons() {
+
         backButton.setOnClickListener(v -> {
             stopMusic();
             startActivity(new Intent(VideosActivity.this, Categorypage.class));
@@ -159,11 +186,9 @@ public class VideosActivity extends AppCompatActivity {
         popupMenu.setOnMenuItemClickListener(item -> {
             String title = item.getTitle().toString();
 
-            if (title.contains("Mute")) {
-                muteMusic();
-            } else if (title.contains("Unmute")) {
-                unmuteMusic();
-            } else if (title.contains("Exit")) {
+            if (title.contains("Mute")) muteMusic();
+            else if (title.contains("Unmute")) unmuteMusic();
+            else if (title.contains("Exit")) {
                 stopMusic();
                 finishAffinity();
             }
@@ -174,7 +199,7 @@ public class VideosActivity extends AppCompatActivity {
     }
 
     // -------------------------------------------------------
-    // BACKGROUND MUSIC
+    // MUSIC HANDLING
     // -------------------------------------------------------
     private void setupMusic() {
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);

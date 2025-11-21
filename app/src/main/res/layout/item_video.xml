@@ -3,14 +3,76 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="6dp"
+    android:foreground="?attr/selectableItemBackground"
+    app:useCompatPadding="true">
 
-    <ImageView
-        android:id="@+id/videoThumbnail"
+<FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:scaleType="centerCrop"
-        android:contentDescription="video thumbnail" />
+        android:layout_height="200dp">
+
+        <!-- Thumbnail -->
+        <ImageView
+            android:id="@+id/videoThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="video thumbnail" />
+
+        <!-- subtle outer gradient vignette (optional) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/overlay_vignette" />
+
+        <!-- Bottom gradient strip for title readability -->
+        <View
+            android:id="@+id/gradientBottom"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_gravity="bottom"
+            android:layout_margin="0dp"
+            android:background="@drawable/gradient_bottom" />
+
+        <!-- Title text -->
+        <TextView
+            android:id="@+id/videoTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="12dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:text="Video title goes here"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-medium"
+            android:shadowColor="#66000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
+
+        <!-- Small premium pill (top-right) -->
+        <TextView
+            android:id="@+id/premiumBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:layout_gravity="top|end"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="PREMIUM"
+            android:textAllCaps="true"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/pill_bg"
+            android:textColor="@android:color/white"
+            android:visibility="gone" />
+    </FrameLayout>
 </androidx.cardview.widget.CardView>
