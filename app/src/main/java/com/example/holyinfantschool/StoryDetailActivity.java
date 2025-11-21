@@ -1,6 +1,5 @@
 package com.example.holyinfantschool;
 
-import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -14,9 +13,9 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -31,10 +30,16 @@ public class StoryDetailActivity extends AppCompatActivity {
     private float currentVolume = 1f;
     private final Handler handler = new Handler();
 
-    private Button playButton;
+    private Button playStopButton;
     private Animation bounceAnim;
     private ScrollView scrollView;
     private TextView contentView;
+    private ProgressBar loadingBar;
+
+    private Runnable revealRunnable;
+    private Handler revealHandler = new Handler();
+    private boolean isRevealing = false;
+    private boolean isPlaying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +48,8 @@ public class StoryDetailActivity extends AppCompatActivity {
 
         TextView titleView = findViewById(R.id.storyTitle);
         contentView = findViewById(R.id.storyContent);
-        playButton = findViewById(R.id.playButton);
+        playStopButton = findViewById(R.id.playStopButton);
+        loadingBar = findViewById(R.id.loadingBar);
         ImageView backButton = findViewById(R.id.backbtn);
         ImageView settingsButton = findViewById(R.id.settingsButton);
         scrollView = findViewById(R.id.storyScroll);
@@ -55,6 +61,7 @@ public class StoryDetailActivity extends AppCompatActivity {
 
         titleView.setText(storyTitle);
         contentView.setText(storyContent);
+        loadingBar.setVisibility(View.INVISIBLE);
 
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
@@ -63,56 +70,88 @@ public class StoryDetailActivity extends AppCompatActivity {
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(Locale.ENGLISH);
-
-                tts.setSpeechRate(0.8f);
-                tts.setPitch(1.3f);
+                tts.setSpeechRate(0.9f);
+                tts.setPitch(1.1f);
 
                 tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                     @Override
                     public void onStart(String utteranceId) {
                         runOnUiThread(() -> {
                             fadeOutMusic();
-                            playButton.startAnimation(bounceAnim);
+                            playStopButton.startAnimation(bounceAnim);
                             startBottomUpTextAnimation();
-                            Toast.makeText(StoryDetailActivity.this, "🎧 Let’s listen!", Toast.LENGTH_SHORT).show();
                         });
                     }
 
                     @Override
                     public void onDone(String utteranceId) {
                         runOnUiThread(() -> {
-                            fadeInMusic();
-                            playButton.clearAnimation();
+                            stopPlayingState();
                         });
                     }
 
                     @Override
                     public void onError(String utteranceId) {
-                        runOnUiThread(() -> {
-                            fadeInMusic();
-                            playButton.clearAnimation();
-                        });
+                        runOnUiThread(() -> stopPlayingState());
                     }
                 });
             }
         });
 
-        playButton.setOnClickListener(v -> {
-            if (tts != null) {
-                fadeOutMusic();
-                contentView.setText(""); // reset text
-                startBottomUpReveal(contentView); // start "bottom-up" reveal
-                tts.speak(storyContent, TextToSpeech.QUEUE_FLUSH, null, "STORY_TTS");
+        playStopButton.setOnClickListener(v -> {
+            if (isPlaying) {
+                stopReading();
+            } else {
+                startReading();
             }
         });
 
         backButton.setOnClickListener(v -> {
+            stopReading();
             stopMusic();
             finish();
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
+    }
+
+    private void startReading() {
+        isPlaying = true;
+        playStopButton.setText("⏹ Stop");
+
+        if (isRevealing && revealRunnable != null) {
+            revealHandler.removeCallbacks(revealRunnable);
+            isRevealing = false;
+        }
+
+        contentView.setText("");
+        loadingBar.setVisibility(View.VISIBLE);
+        startBottomUpReveal(contentView);
+
+        Bundle params = new Bundle();
+        params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "STORY_TTS");
+        tts.speak(storyContent, TextToSpeech.QUEUE_FLUSH, params, "STORY_TTS");
+    }
+
+    private void stopReading() {
+        isPlaying = false;
+        playStopButton.setText("🎧 Listen");
+
+        if (tts != null) tts.stop();
+        if (isRevealing && revealRunnable != null) revealHandler.removeCallbacks(revealRunnable);
+        isRevealing = false;
+        playStopButton.clearAnimation();
+        loadingBar.setVisibility(View.INVISIBLE);
+        fadeInMusic();
+    }
+
+    private void stopPlayingState() {
+        isPlaying = false;
+        playStopButton.setText("🎧 Listen");
+        playStopButton.clearAnimation();
+        loadingBar.setVisibility(View.INVISIBLE);
+        fadeInMusic();
     }
 
     private void startBottomUpTextAnimation() {
@@ -133,38 +172,43 @@ public class StoryDetailActivity extends AppCompatActivity {
         int fullHeight = scrollView.getChildAt(0).getHeight();
         int visibleHeight = scrollView.getHeight();
         int scrollRange = fullHeight - visibleHeight;
-
         if (scrollRange <= 0) return;
 
         ValueAnimator animator = ValueAnimator.ofInt(scrollRange, 0);
-        animator.setDuration(20000); // 20s scrolling time
+        animator.setDuration(20000);
         animator.addUpdateListener(animation ->
                 scrollView.scrollTo(0, (int) animation.getAnimatedValue()));
         animator.start();
     }
 
     private void startBottomUpReveal(TextView contentView) {
+        if (isRevealing && revealRunnable != null) {
+            revealHandler.removeCallbacks(revealRunnable);
+        }
+
+        isRevealing = true;
         String story = storyContent;
         contentView.setText("");
         final int totalLength = story.length();
-        final int delay = 50;
+        final int delay = 30;
 
-        Handler handler = new Handler();
-        Runnable runnable = new Runnable() {
+        revealRunnable = new Runnable() {
             int index = 0;
             @Override
             public void run() {
                 if (index < totalLength) {
-
                     contentView.append(String.valueOf(story.charAt(index)));
-
                     scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
                     index++;
-                    handler.postDelayed(this, delay);
+                    revealHandler.postDelayed(this, delay);
+                } else {
+                    isRevealing = false;
+                    loadingBar.setVisibility(View.INVISIBLE);
                 }
             }
         };
-        runnable.run();
+
+        revealRunnable.run();
     }
 
     private void showSettingsMenu(ImageView anchor) {
@@ -177,12 +221,11 @@ public class StoryDetailActivity extends AppCompatActivity {
             if (title.contains("Mute")) {
                 muteDevice();
                 isMuted = true;
-                Toast.makeText(this, "🔇 Music Off", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Unmute")) {
                 unmuteDevice();
                 isMuted = false;
-                Toast.makeText(this, "🔊 Music On", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Exit")) {
+                stopReading();
                 stopMusic();
                 finishAffinity();
             }
@@ -251,6 +294,9 @@ public class StoryDetailActivity extends AppCompatActivity {
             tts.stop();
             tts.shutdown();
         }
+
+        if (isRevealing && revealRunnable != null) revealHandler.removeCallbacks(revealRunnable);
+
         stopMusic();
         super.onDestroy();
     }

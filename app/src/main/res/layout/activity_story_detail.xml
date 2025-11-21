@@ -6,7 +6,6 @@
     android:background="@drawable/bg_candy_gradient"
     android:padding="18dp">
 
-    <!-- 🍭 Top Navigation -->
     <LinearLayout
         android:id="@+id/topNav"
         android:layout_width="match_parent"
@@ -45,7 +44,6 @@
             app:tint="#ffffff" />
     </LinearLayout>
 
-    <!-- 🧁 Story Title -->
     <TextView
         android:id="@+id/storyTitle"
         android:layout_width="match_parent"
@@ -59,13 +57,12 @@
         android:fontFamily="casual"
         android:gravity="center" />
 
-    <!-- 📖 Scrollable Story -->
     <ScrollView
         android:id="@+id/storyScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/storyTitle"
-        android:layout_above="@id/playButton"
+        android:layout_above="@id/playStopButton"
         android:layout_marginTop="10dp"
         android:padding="10dp">
 
@@ -80,9 +77,19 @@
             android:fontFamily="serif" />
     </ScrollView>
 
-    <!-- 🍬 Listen Button -->
+    <ProgressBar
+        android:id="@+id/loadingBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_above="@id/playStopButton"
+        android:layout_marginBottom="12dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        android:progressTint="@color/purple_500" />
+
     <Button
-        android:id="@+id/playButton"
+        android:id="@+id/playStopButton"
         android:layout_width="200dp"
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"
@@ -93,4 +100,5 @@
         android:fontFamily="casual"
         android:background="@drawable/btn_candy_bubble"
         android:elevation="8dp" />
+
 </RelativeLayout>
