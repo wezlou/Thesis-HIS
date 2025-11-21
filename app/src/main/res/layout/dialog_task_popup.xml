@@ -64,4 +64,14 @@
         android:paddingVertical="8dp"
         android:layout_gravity="center" />
 
+    <Button
+        android:id="@+id/commentButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Comment 💬"
+        android:backgroundTint="@color/default_icon"
+        android:textColor="@android:color/white"
+        android:layout_marginTop="8dp"/>
+
+
 </LinearLayout>
