@@ -48,25 +48,24 @@ public class StoryDetailActivity extends AppCompatActivity {
         ImageView settingsButton = findViewById(R.id.settingsButton);
         scrollView = findViewById(R.id.storyScroll);
 
-        // 🍬 Candy-style bounce animation for buttons
         bounceAnim = AnimationUtils.loadAnimation(this, R.anim.button_bounce);
 
-        // ✅ Get story data
         String storyTitle = getIntent().getStringExtra("title");
         storyContent = getIntent().getStringExtra("content");
 
         titleView.setText(storyTitle);
         contentView.setText(storyContent);
 
-        // ✅ Background music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // ✅ Initialize TTS
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(Locale.ENGLISH);
+
+                tts.setSpeechRate(0.8f);
+                tts.setPitch(1.3f);
 
                 tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                     @Override
@@ -98,7 +97,6 @@ public class StoryDetailActivity extends AppCompatActivity {
             }
         });
 
-        // ✅ Play / Listen button
         playButton.setOnClickListener(v -> {
             if (tts != null) {
                 fadeOutMusic();
@@ -108,23 +106,19 @@ public class StoryDetailActivity extends AppCompatActivity {
             }
         });
 
-        // ✅ Back button
         backButton.setOnClickListener(v -> {
             stopMusic();
             finish();
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
-        // ✅ Settings
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
     }
 
-    // 🍭 Animate text appearing from bottom upwards
     private void startBottomUpTextAnimation() {
         contentView.setAlpha(0f);
-        contentView.setTranslationY(300f); // start lower (off-screen-ish)
+        contentView.setTranslationY(300f);
 
-        // fade + slide up animation
         contentView.animate()
                 .translationY(0f)
                 .alpha(1f)
@@ -132,11 +126,9 @@ public class StoryDetailActivity extends AppCompatActivity {
                 .setDuration(1500)
                 .start();
 
-        // after fade-in, start smooth scroll upward like reading
         handler.postDelayed(() -> smoothScrollStory(scrollView), 1500);
     }
 
-    // 🎠 Smooth scroll animation (bottom to top)
     private void smoothScrollStory(ScrollView scrollView) {
         int fullHeight = scrollView.getChildAt(0).getHeight();
         int visibleHeight = scrollView.getHeight();
@@ -152,10 +144,10 @@ public class StoryDetailActivity extends AppCompatActivity {
     }
 
     private void startBottomUpReveal(TextView contentView) {
-        String story = storyContent; // your full story text
-        contentView.setText("");      // start empty
+        String story = storyContent;
+        contentView.setText("");
         final int totalLength = story.length();
-        final int delay = 50; // delay per character (ms)
+        final int delay = 50;
 
         Handler handler = new Handler();
         Runnable runnable = new Runnable() {
@@ -163,9 +155,9 @@ public class StoryDetailActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if (index < totalLength) {
-                    // append next character at bottom
+
                     contentView.append(String.valueOf(story.charAt(index)));
-                    // ensure cursor stays at bottom
+
                     scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
                     index++;
                     handler.postDelayed(this, delay);

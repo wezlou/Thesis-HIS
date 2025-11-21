@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -16,15 +17,14 @@ public class Homepage extends AppCompatActivity {
     private Button studentLoginBtn, facultyLoginBtn, exitBtn;
     private ImageView volumeOn, volumeOff, teacherSetting;
     private LinearLayout studentOverlay, facultyOverlay;
-    private EditText studentEmail, facultyEmail;
-    private EditText studentPassword, facultyPassword;
+    private EditText studentEmail, studentPassword, facultyEmail, facultyPassword;
     private TextView forgotStudentPassword, forgotFacultyPassword;
     private Button studentLoginConfirm, facultyLoginConfirm, closeStudentOverlay, closeFacultyOverlay;
 
     private FirebaseAuth firebaseAuth;
     private FirebaseFirestore firestore;
     private MediaPlayer mediaPlayer;
-    private boolean isMusicPlaying = false;
+    private boolean isMusicPlaying = true;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -35,7 +35,6 @@ public class Homepage extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
-        // Views
         studentLoginBtn = findViewById(R.id.student_login);
         facultyLoginBtn = findViewById(R.id.faculty_login);
         exitBtn = findViewById(R.id.exit);
@@ -48,6 +47,7 @@ public class Homepage extends AppCompatActivity {
 
         studentEmail = findViewById(R.id.studentEmail);
         studentPassword = findViewById(R.id.studentPassword);
+
         facultyEmail = findViewById(R.id.facultyEmail);
         facultyPassword = findViewById(R.id.facultyPassword);
 
@@ -59,17 +59,14 @@ public class Homepage extends AppCompatActivity {
         closeStudentOverlay = findViewById(R.id.closeStudentOverlay);
         closeFacultyOverlay = findViewById(R.id.closeFacultyOverlay);
 
-        // Background Music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
-        isMusicPlaying = true;
 
-        // Volume toggle
         teacherSetting.setOnClickListener(v -> {
-            int visibility = volumeOn.getVisibility() == View.VISIBLE ? View.INVISIBLE : View.VISIBLE;
-            volumeOn.setVisibility(visibility);
-            volumeOff.setVisibility(visibility);
+            boolean shouldShow = volumeOn.getVisibility() != View.VISIBLE;
+            volumeOn.setVisibility(shouldShow ? View.VISIBLE : View.INVISIBLE);
+            volumeOff.setVisibility(shouldShow ? View.VISIBLE : View.INVISIBLE);
         });
 
         volumeOn.setOnClickListener(v -> {
@@ -86,19 +83,18 @@ public class Homepage extends AppCompatActivity {
             }
         });
 
-        // Show overlays
         studentLoginBtn.setOnClickListener(v -> studentOverlay.setVisibility(View.VISIBLE));
         facultyLoginBtn.setOnClickListener(v -> facultyOverlay.setVisibility(View.VISIBLE));
+
         closeStudentOverlay.setOnClickListener(v -> studentOverlay.setVisibility(View.GONE));
         closeFacultyOverlay.setOnClickListener(v -> facultyOverlay.setVisibility(View.GONE));
 
-        // Forgot password
         forgotStudentPassword.setOnClickListener(v -> sendResetLink(studentEmail.getText().toString()));
         forgotFacultyPassword.setOnClickListener(v -> sendResetLink(facultyEmail.getText().toString()));
 
-        // Login buttons
         studentLoginConfirm.setOnClickListener(v ->
                 handleLogin(studentEmail.getText().toString(), studentPassword.getText().toString(), true));
+
         facultyLoginConfirm.setOnClickListener(v ->
                 handleLogin(facultyEmail.getText().toString(), facultyPassword.getText().toString(), false));
 
@@ -110,6 +106,7 @@ public class Homepage extends AppCompatActivity {
             Toast.makeText(this, "Enter email first.", Toast.LENGTH_SHORT).show();
             return;
         }
+
         firebaseAuth.sendPasswordResetEmail(email)
                 .addOnSuccessListener(aVoid ->
                         Toast.makeText(this, "Reset link sent to email.", Toast.LENGTH_SHORT).show())
@@ -117,25 +114,72 @@ public class Homepage extends AppCompatActivity {
                         Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
-    private void handleLogin(String email, String password, boolean isStudent) {
+    private void handleLogin(String email, String password, boolean isStudentLogin) {
+
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
             Toast.makeText(this, "Please enter email and password.", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        showLoading(true);
+
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
-                    if (isStudent) {
-                        startActivity(new Intent(Homepage.this, Categorypage.class));
-                        Toast.makeText(this, "Welcome Student!", Toast.LENGTH_SHORT).show();
-                    } else {
-                        startActivity(new Intent(Homepage.this, TeacherSite.class));
-                        Toast.makeText(this, "Welcome Faculty!", Toast.LENGTH_SHORT).show();
-                    }
-                    finish();
+
+                    String collection = isStudentLogin ? "students" : "faculty";
+
+                    // 🔥 Query Firestore using email instead of UID
+                    firestore.collection(collection)
+                            .whereEqualTo("email", email)
+                            .limit(1)
+                            .get()
+                            .addOnSuccessListener(query -> {
+
+                                showLoading(false);
+
+                                if (query.isEmpty()) {
+                                    // No record in that collection
+                                    Toast.makeText(this,
+                                            isStudentLogin ?
+                                                    "This account is not registered as a student." :
+                                                    "This account is not registered as a teacher.",
+                                            Toast.LENGTH_SHORT).show();
+
+                                    firebaseAuth.signOut();
+                                    return;
+                                }
+
+                                // 🔥 Correct user → login success
+                                if (isStudentLogin) {
+                                    startActivity(new Intent(this, Categorypage.class));
+                                    Toast.makeText(this, "Welcome Student!", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    startActivity(new Intent(this, TeacherSite.class));
+                                    Toast.makeText(this, "Welcome Faculty!", Toast.LENGTH_SHORT).show();
+                                }
+
+                                finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                showLoading(false);
+                                Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void showLoading(boolean show) {
+        View loading = findViewById(R.id.loadingOverlay);
+        loading.setVisibility(show ? View.VISIBLE : View.GONE);
+
+        studentLoginConfirm.setEnabled(!show);
+        facultyLoginConfirm.setEnabled(!show);
+        studentLoginBtn.setEnabled(!show);
+        facultyLoginBtn.setEnabled(!show);
     }
 
     @Override
@@ -147,7 +191,7 @@ public class Homepage extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!isMusicPlaying) mediaPlayer.start();
+        if (isMusicPlaying) mediaPlayer.start();
     }
 
     @Override

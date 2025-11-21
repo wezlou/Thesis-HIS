@@ -31,7 +31,7 @@ public class Shape1Activity extends AppCompatActivity {
     public static int totalIncorrect = 0;
 
     private ImageView questionShape, option1, option2, option3;
-    private TextView levelText, questionText;
+    private TextView questionText;
     private ImageView settingsButton, backButton;
 
     private int currentLevel = 1;
@@ -72,7 +72,6 @@ public class Shape1Activity extends AppCompatActivity {
         option1 = findViewById(R.id.circle);
         option2 = findViewById(R.id.triangle);
         option3 = findViewById(R.id.square);
-        levelText = findViewById(R.id.level);
         questionText = findViewById(R.id.question_shape);
         settingsButton = findViewById(R.id.settingsButton);
         backButton = findViewById(R.id.backbtn);
@@ -200,7 +199,6 @@ public class Shape1Activity extends AppCompatActivity {
         }
 
         questionText.setText("What shape is this?");
-        levelText.setText("Level " + level);
         questionShape.setImageResource(questionShapes[level - 1]);
 
         int correctShapeType = correctAnswers[level - 1];
