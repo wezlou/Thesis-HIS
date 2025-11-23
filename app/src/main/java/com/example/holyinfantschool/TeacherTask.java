@@ -138,7 +138,8 @@ public class TeacherTask extends AppCompatActivity {
 
         if (isEditing && editingAnnouncementId != null) {
             final String annId = editingAnnouncementId;
-            db.collection("announcements").document(annId)
+            db.collection("announcements")
+                    .document(annId)
                     .update(data)
                     .addOnSuccessListener(aVoid -> {
                         Toast.makeText(this, "Announcement updated", Toast.LENGTH_SHORT).show();
@@ -177,13 +178,15 @@ public class TeacherTask extends AppCompatActivity {
             final String displayName = entry.getKey();
             final Uri fileUri = entry.getValue();
 
+            // Upload in background thread
             new Thread(() -> {
                 try {
-                    String storedFileName = BackblazeUploader.uploadFile(TeacherTask.this, fileUri);
+                    // Upload to Uploadcare and get CDN URL (blocking call, runs on this background thread)
+                    String cdnUrl = UploadCareUploader.upload(TeacherTask.this, fileUri);
 
                     Map<String, Object> fileData = new HashMap<>();
                     fileData.put("fileName", displayName);
-                    fileData.put("storedFileName", storedFileName);
+                    fileData.put("fileUrl", cdnUrl); // permanent public URL from Uploadcare
                     fileData.put("timestamp", new Date());
 
                     db.collection("announcements")
@@ -196,11 +199,13 @@ public class TeacherTask extends AppCompatActivity {
                     );
                 } catch (Exception e) {
                     e.printStackTrace();
-                    runOnUiThread(() -> Toast.makeText(TeacherTask.this, "Upload failed: " + displayName + " — " + e.getMessage(), Toast.LENGTH_LONG).show());
+                    runOnUiThread(() -> Toast.makeText(TeacherTask.this,
+                            "Upload failed: " + displayName + " — " + e.getMessage(), Toast.LENGTH_LONG).show());
                 }
             }).start();
         }
 
+        // clear selections locally
         uploadedFilesMap.clear();
         runOnUiThread(() -> uploadedFilesContainer.removeAllViews());
     }
@@ -369,24 +374,19 @@ public class TeacherTask extends AppCompatActivity {
                     filesContainer.removeAllViews();
                     for (DocumentSnapshot f : filesSnap) {
                         String fname = f.getString("fileName");
-                        String stored = f.getString("storedFileName");
-                        if (fname == null || stored == null) continue;
+                        String furl = f.getString("fileUrl");
+                        if (fname == null || furl == null) continue;
 
                         TextView fileView = createTextView(fname, 14f, false);
                         fileView.setOnClickListener(v -> {
-                            new Thread(() -> {
-                                try {
-                                    String url = BackblazeUploader.generateDownloadUrl(stored);
-                                    // open preview activity in-app
-                                    Intent p = new Intent(TeacherTask.this, PreviewActivity.class);
-                                    p.putExtra(PreviewActivity.EXTRA_URL, url);
-                                    p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, fname);
-                                    startActivity(p);
-                                } catch (Exception ex) {
-                                    ex.printStackTrace();
-                                    runOnUiThread(() -> Toast.makeText(TeacherTask.this, "Cannot open file: " + ex.getMessage(), Toast.LENGTH_SHORT).show());
-                                }
-                            }).start();
+                            try {
+                                Intent p = new Intent(TeacherTask.this, PreviewActivity.class);
+                                p.putExtra(PreviewActivity.EXTRA_URL, furl);
+                                p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, fname);
+                                startActivity(p);
+                            } catch (Exception ex) {
+                                Toast.makeText(TeacherTask.this, "Cannot open file", Toast.LENGTH_SHORT).show();
+                            }
                         });
                         filesContainer.addView(fileView);
                     }
@@ -403,6 +403,7 @@ public class TeacherTask extends AppCompatActivity {
                     db.collection("announcements").document(announcementId)
                             .delete()
                             .addOnSuccessListener(aVoid -> {
+                                // delete related comments and sharedFiles metadata
                                 db.collection("comments").whereEqualTo("announcementId", announcementId).get()
                                         .addOnSuccessListener(query -> {
                                             for (DocumentSnapshot c : query) {
@@ -428,6 +429,7 @@ public class TeacherTask extends AppCompatActivity {
         return card;
     }
 
+    // small helpers and comment UI (full inline comments implementation)
     private CardView createModernCard() {
         CardView card = new CardView(this);
         card.setCardElevation(10f);
@@ -454,25 +456,31 @@ public class TeacherTask extends AppCompatActivity {
     }
 
     private void addInlineCommentSection(LinearLayout parent, String announcementId) {
+        // Divider line
         View divider = new View(this);
-        divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2));
+        divider.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 2));
         divider.setBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
         parent.addView(divider);
 
+        // Section Header
         TextView commentHeader = createTextView("💬 Comments", 15f, true);
         commentHeader.setPadding(0, 10, 0, 10);
         parent.addView(commentHeader);
 
+        // Comment List
         LinearLayout commentList = new LinearLayout(this);
         commentList.setOrientation(LinearLayout.VERTICAL);
         commentList.setPadding(16, 8, 16, 8);
         parent.addView(commentList);
 
+        // Comment Input Layout
         LinearLayout commentInputLayout = new LinearLayout(this);
         commentInputLayout.setOrientation(LinearLayout.HORIZONTAL);
         commentInputLayout.setGravity(Gravity.CENTER_VERTICAL);
         commentInputLayout.setPadding(8, 8, 8, 8);
 
+        // EditText Input
         EditText commentInput = new EditText(this);
         commentInput.setHint("Add a comment...");
         commentInput.setBackgroundResource(R.drawable.input_rounded);
@@ -485,6 +493,7 @@ public class TeacherTask extends AppCompatActivity {
         commentInput.setLayoutParams(inputParams);
         commentInputLayout.addView(commentInput);
 
+        // Send Button (with round background)
         FrameLayout sendContainer = new FrameLayout(this);
         LinearLayout.LayoutParams sendParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -496,6 +505,7 @@ public class TeacherTask extends AppCompatActivity {
         sendButton.setContentDescription("Send comment");
         sendContainer.addView(sendButton);
 
+        // Loading Spinner (hidden by default)
         ProgressBar loadingSpinner = new ProgressBar(this, null, android.R.attr.progressBarStyleSmall);
         loadingSpinner.setVisibility(View.GONE);
         loadingSpinner.setIndeterminate(true);
@@ -504,6 +514,7 @@ public class TeacherTask extends AppCompatActivity {
         commentInputLayout.addView(sendContainer);
         parent.addView(commentInputLayout);
 
+        // Listen for comments in Firestore (by announcementId)
         db.collection("comments")
                 .whereEqualTo("announcementId", announcementId)
                 .orderBy("timestamp", Query.Direction.ASCENDING)
@@ -515,6 +526,7 @@ public class TeacherTask extends AppCompatActivity {
                         String user = doc.getString("user");
                         String text = doc.getString("text");
 
+                        // Bubble style
                         LinearLayout bubble = new LinearLayout(this);
                         bubble.setOrientation(LinearLayout.VERTICAL);
                         bubble.setBackgroundResource(R.drawable.comment_bubble_bg);
@@ -537,10 +549,12 @@ public class TeacherTask extends AppCompatActivity {
                     }
                 });
 
+        // Send Comment Logic
         sendButton.setOnClickListener(v -> {
             String commentText = commentInput.getText().toString().trim();
             if (commentText.isEmpty()) return;
 
+            // Disable send + show loading
             sendButton.setEnabled(false);
             sendButton.setAlpha(0.5f);
             loadingSpinner.setVisibility(View.VISIBLE);
@@ -566,6 +580,7 @@ public class TeacherTask extends AppCompatActivity {
                         Toast.makeText(this, "Failed to send comment ❌", Toast.LENGTH_SHORT).show();
                     })
                     .addOnCompleteListener(task -> {
+                        // Re-enable and reset
                         sendButton.setEnabled(true);
                         sendButton.setAlpha(1f);
                         loadingSpinner.setVisibility(View.GONE);

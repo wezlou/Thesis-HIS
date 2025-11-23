@@ -5,7 +5,6 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +13,7 @@ import androidx.core.content.ContextCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -144,17 +144,15 @@ public class studenttask extends AppCompatActivity {
                     .get()
                     .addOnSuccessListener(query -> {
                         for (QueryDocumentSnapshot doc : query) {
-                            String displayName = doc.getString("fileName");          // what teacher named it (visible)
-                            String storedName = doc.getString("storedFileName");     // UUID stored in B2
+                            String displayName = doc.getString("fileName");          // visible name
+                            String fileUrl = doc.getString("fileUrl");               // public CDN URL from Uploadcare
                             Date timestamp = doc.getDate("timestamp");
-                            String parentAnnouncementId = doc.getReference().getParent().getParent().getId(); // announcements/{id}
-                            if (displayName == null || storedName == null) continue;
+                            if (displayName == null || fileUrl == null) continue;
 
-                            // decide whether this file matches filter by extension
                             String ext = getExtension(displayName);
                             if (matchesFilter(ext, filter)) {
                                 hasItems[0] = true;
-                                addTaskItem(displayName, storedName, timestamp, parentAnnouncementId);
+                                addTaskItem(displayName, fileUrl, timestamp);
                             }
                         }
                         queriesCompleted[0]++;
@@ -185,7 +183,7 @@ public class studenttask extends AppCompatActivity {
         titleView.setTextColor(ContextCompat.getColor(this, R.color.black));
         TextView teacherView = createTextView("By " + teacherEmail, 14f, false);
         TextView contentView = createTextView(content, 15f, false);
-        TextView timeView = createTextView(timestamp != null ? DATE_FORMAT.format(timestamp) : "", 12f, false);
+        TextView timeView = createTextView(DATE_FORMAT.format(timestamp), 12f, false);
         timeView.setGravity(Gravity.END);
 
         contentLayout.addView(titleView);
@@ -193,19 +191,12 @@ public class studenttask extends AppCompatActivity {
         contentLayout.addView(contentView);
         contentLayout.addView(timeView);
 
-        // comments for announcements use the announcementId
         addInlineCommentSection(contentLayout, announcementId);
-
         card.addView(contentLayout);
         assignedTasksContainer.addView(card);
     }
 
-    /**
-     * addTaskItem - shows a file entry (keeps your UI)
-     * storedName = the UUID/filename stored in Backblaze (we saved this in Firestore)
-     * parentAnnouncementId = announcement id where this file belongs (useful for context)
-     */
-    private void addTaskItem(String displayName, String storedName, Date timestamp, String parentAnnouncementId) {
+    private void addTaskItem(String displayName, String fileUrl, Date timestamp) {
         CardView card = createModernCard();
 
         LinearLayout layout = new LinearLayout(this);
@@ -238,34 +229,15 @@ public class studenttask extends AppCompatActivity {
         openButton.setText("Open File");
         openButton.setBackgroundResource(R.drawable.btn_round_send);
         openButton.setOnClickListener(v -> {
-            // generate temp authorized url (7-day) and open it in PreviewActivity
-            ProgressBar pb = new ProgressBar(studenttask.this, null, android.R.attr.progressBarStyleSmall);
-            pb.setIndeterminate(true);
-            layout.addView(pb);
-
-            new Thread(() -> {
-                try {
-                    String url = BackblazeUploader.generateDownloadUrl(storedName);
-                    final Intent p = new Intent(studenttask.this, PreviewActivity.class);
-                    p.putExtra(PreviewActivity.EXTRA_URL, url);
-                    p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, displayName);
-                    runOnUiThread(() -> {
-                        layout.removeView(pb);
-                        startActivity(p);
-                    });
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    runOnUiThread(() -> {
-                        layout.removeView(pb);
-                        Toast.makeText(studenttask.this, "Cannot open file: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-                }
-            }).start();
+            Intent i = new Intent(studenttask.this, PreviewActivity.class);
+            i.putExtra(PreviewActivity.EXTRA_URL, fileUrl);
+            i.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, displayName);
+            startActivity(i);
         });
         layout.addView(openButton);
 
-        // comments for files use a unique key so file-comments are separate from announcement comments
-        String fileCommentKey = "file:" + storedName;
+        // comments key for files
+        String fileCommentKey = "file:" + fileUrl; // use URL as unique key
         addInlineCommentSectionForId(layout, fileCommentKey);
 
         card.addView(layout);
@@ -306,28 +278,24 @@ public class studenttask extends AppCompatActivity {
 
     /**
      * Generic inline comments UI that uses the provided key for Firestore comment documents' announcementId field.
-     * This lets announcements and files have separate comment threads (use 'file:<storedName>' for files).
+     * This lets announcements and files have separate comment threads (use 'file:<url>' for files).
      */
     private void addInlineCommentSectionForId(LinearLayout parent, String idForComments) {
-        // Divider
         View divider = new View(this);
         divider.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 2));
         divider.setBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
         parent.addView(divider);
 
-        // Header
         TextView commentHeader = createTextView("💬 Comments", 15f, true);
         commentHeader.setPadding(0, 10, 0, 10);
         parent.addView(commentHeader);
 
-        // Comment list container
         LinearLayout commentList = new LinearLayout(this);
         commentList.setOrientation(LinearLayout.VERTICAL);
         commentList.setPadding(16, 8, 16, 8);
         parent.addView(commentList);
 
-        // Input layout
         LinearLayout commentInputLayout = new LinearLayout(this);
         commentInputLayout.setOrientation(LinearLayout.HORIZONTAL);
         commentInputLayout.setGravity(Gravity.CENTER_VERTICAL);
@@ -436,28 +404,6 @@ public class studenttask extends AppCompatActivity {
         });
     }
 
-    private void openFile(Uri fileUri) {
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(fileUri, getContentResolver().getType(fileUri));
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        try {
-            startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(this, "No app available to open this file", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void highlightSelected(TextView selected) {
-        filterAll.setBackgroundResource(R.drawable.filter_tab_bg);
-        filterText.setBackgroundResource(R.drawable.filter_tab_bg);
-        filterImages.setBackgroundResource(R.drawable.filter_tab_bg);
-        filterVideos.setBackgroundResource(R.drawable.filter_tab_bg);
-        filterPdfs.setBackgroundResource(R.drawable.filter_tab_bg);
-        filterDocs.setBackgroundResource(R.drawable.filter_tab_bg);
-        selected.setBackgroundResource(R.drawable.filter_tab_selected_bg);
-    }
-
-    // helper: extension from display name
     private String getExtension(String name) {
         if (name == null) return "";
         int idx = name.lastIndexOf('.');
@@ -465,7 +411,6 @@ public class studenttask extends AppCompatActivity {
         return name.substring(idx + 1).toLowerCase(Locale.ROOT);
     }
 
-    // helper: matches our filter keys
     private boolean matchesFilter(String ext, String filter) {
         if (filter.equals("all")) return true;
         if (filter.equals("text")) return false; // text handled in announcements
@@ -478,5 +423,15 @@ public class studenttask extends AppCompatActivity {
         if (filter.equals("pdf")) return ext.equals("pdf");
         if (filter.equals("doc")) return ext.equals("doc") || ext.equals("docx") || ext.equals("txt") || ext.equals("odt");
         return false;
+    }
+
+    private void highlightSelected(TextView selected) {
+        filterAll.setBackgroundResource(R.drawable.filter_tab_bg);
+        filterText.setBackgroundResource(R.drawable.filter_tab_bg);
+        filterImages.setBackgroundResource(R.drawable.filter_tab_bg);
+        filterVideos.setBackgroundResource(R.drawable.filter_tab_bg);
+        filterPdfs.setBackgroundResource(R.drawable.filter_tab_bg);
+        filterDocs.setBackgroundResource(R.drawable.filter_tab_bg);
+        selected.setBackgroundResource(R.drawable.filter_tab_selected_bg);
     }
 }
