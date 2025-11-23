@@ -5,6 +5,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,14 +13,12 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
+import com.google.firebase.firestore.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class studenttask extends AppCompatActivity {
 
@@ -70,10 +69,10 @@ public class studenttask extends AppCompatActivity {
 
         filterAll.setOnClickListener(v -> { highlightSelected(filterAll); loadContent("all"); });
         filterText.setOnClickListener(v -> { highlightSelected(filterText); loadContent("text"); });
-        filterImages.setOnClickListener(v -> { highlightSelected(filterImages); loadContent("image/"); });
-        filterVideos.setOnClickListener(v -> { highlightSelected(filterVideos); loadContent("video/"); });
-        filterPdfs.setOnClickListener(v -> { highlightSelected(filterPdfs); loadContent("application/pdf"); });
-        filterDocs.setOnClickListener(v -> { highlightSelected(filterDocs); loadContent("application/msword"); });
+        filterImages.setOnClickListener(v -> { highlightSelected(filterImages); loadContent("image"); });
+        filterVideos.setOnClickListener(v -> { highlightSelected(filterVideos); loadContent("video"); });
+        filterPdfs.setOnClickListener(v -> { highlightSelected(filterPdfs); loadContent("pdf"); });
+        filterDocs.setOnClickListener(v -> { highlightSelected(filterDocs); loadContent("doc"); });
     }
 
     private void showSettingsMenu(ImageView anchor) {
@@ -111,39 +110,55 @@ public class studenttask extends AppCompatActivity {
         final int[] queriesCompleted = {0};
 
         if (filter.equals("all") || filter.equals("text")) {
-            db.collection("announcements").get().addOnSuccessListener(query -> {
-                for (QueryDocumentSnapshot doc : query) {
-                    hasItems[0] = true;
-                    String teacherEmail = doc.getString("teacherEmail");
-                    String title = doc.getString("title");
-                    String content = doc.getString("content");
-                    Date timestamp = doc.getDate("timestamp");
-                    addAnnouncementItem(teacherEmail, title, content, timestamp);
-                }
-                queriesCompleted[0]++;
-                checkEmptyState(hasItems[0], queriesCompleted[0]);
-            });
-        } else queriesCompleted[0]++;
+            db.collection("announcements").orderBy("timestamp", Query.Direction.DESCENDING)
+                    .get().addOnSuccessListener(query -> {
+                        for (QueryDocumentSnapshot doc : query) {
+                            hasItems[0] = true;
+                            String teacherEmail = doc.getString("teacherEmail");
+                            String title = doc.getString("title");
+                            String content = doc.getString("content");
+                            Date timestamp = doc.getDate("timestamp");
+                            String announcementId = doc.getId();
+                            addAnnouncementItem(announcementId, teacherEmail, title, content, timestamp);
+                        }
+                        queriesCompleted[0]++;
+                        checkEmptyState(hasItems[0], queriesCompleted[0]);
+                    }).addOnFailureListener(e -> {
+                        queriesCompleted[0]++;
+                        checkEmptyState(hasItems[0], queriesCompleted[0]);
+                    });
+        } else {
+            queriesCompleted[0]++;
+        }
 
         if (!filter.equals("text")) {
-            db.collection("shared_files").get().addOnSuccessListener(query -> {
-                for (QueryDocumentSnapshot doc : query) {
-                    String fileName = doc.getString("fileName");
-                    String fileUrl = doc.getString("fileUrl");
-                    Date timestamp = doc.getDate("timestamp");
-                    if (fileUrl == null) continue;
+            db.collectionGroup("sharedFiles")
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .get()
+                    .addOnSuccessListener(query -> {
+                        for (QueryDocumentSnapshot doc : query) {
+                            String displayName = doc.getString("fileName");
+                            String storedName = doc.getString("storedFileName");
+                            Date timestamp = doc.getDate("timestamp");
+                            String parentAnnouncementId = doc.getReference().getParent().getParent().getId();
+                            if (displayName == null || storedName == null) continue;
 
-                    Uri fileUri = Uri.parse(fileUrl);
-                    String mimeType = getContentResolver().getType(fileUri);
-                    if (filter.equals("all") || (mimeType != null && mimeType.startsWith(filter))) {
-                        hasItems[0] = true;
-                        addTaskItem(fileName, fileUri, timestamp);
-                    }
-                }
-                queriesCompleted[0]++;
-                checkEmptyState(hasItems[0], queriesCompleted[0]);
-            });
-        } else queriesCompleted[0]++;
+                            String ext = getExtension(displayName);
+                            if (matchesFilter(ext, filter)) {
+                                hasItems[0] = true;
+                                addTaskItem(displayName, storedName, timestamp, parentAnnouncementId);
+                            }
+                        }
+                        queriesCompleted[0]++;
+                        checkEmptyState(hasItems[0], queriesCompleted[0]);
+                    })
+                    .addOnFailureListener(e -> {
+                        queriesCompleted[0]++;
+                        checkEmptyState(hasItems[0], queriesCompleted[0]);
+                    });
+        } else {
+            queriesCompleted[0]++;
+        }
     }
 
     private void checkEmptyState(boolean hasItems, int queriesCompleted) {
@@ -151,7 +166,7 @@ public class studenttask extends AppCompatActivity {
             emptyMessage.setVisibility(hasItems ? View.GONE : View.VISIBLE);
     }
 
-    private void addAnnouncementItem(String teacherEmail, String title, String content, Date timestamp) {
+    private void addAnnouncementItem(String announcementId, String teacherEmail, String title, String content, Date timestamp) {
         CardView card = createModernCard();
 
         LinearLayout contentLayout = new LinearLayout(this);
@@ -162,7 +177,7 @@ public class studenttask extends AppCompatActivity {
         titleView.setTextColor(ContextCompat.getColor(this, R.color.black));
         TextView teacherView = createTextView("By " + teacherEmail, 14f, false);
         TextView contentView = createTextView(content, 15f, false);
-        TextView timeView = createTextView(DATE_FORMAT.format(timestamp), 12f, false);
+        TextView timeView = createTextView(timestamp != null ? DATE_FORMAT.format(timestamp) : "", 12f, false);
         timeView.setGravity(Gravity.END);
 
         contentLayout.addView(titleView);
@@ -170,12 +185,13 @@ public class studenttask extends AppCompatActivity {
         contentLayout.addView(contentView);
         contentLayout.addView(timeView);
 
-        addInlineCommentSection(contentLayout, title);
+        addInlineCommentSection(contentLayout, announcementId);
+
         card.addView(contentLayout);
         assignedTasksContainer.addView(card);
     }
 
-    private void addTaskItem(String fileName, Uri fileUri, Date timestamp) {
+    private void addTaskItem(String displayName, String storedName, Date timestamp, String parentAnnouncementId) {
         CardView card = createModernCard();
 
         LinearLayout layout = new LinearLayout(this);
@@ -195,8 +211,8 @@ public class studenttask extends AppCompatActivity {
 
         LinearLayout textHolder = new LinearLayout(this);
         textHolder.setOrientation(LinearLayout.VERTICAL);
-        TextView nameView = createTextView(fileName, 16f, true);
-        TextView dateView = createTextView(DATE_FORMAT.format(timestamp), 12f, false);
+        TextView nameView = createTextView(displayName, 16f, true);
+        TextView dateView = createTextView(timestamp != null ? DATE_FORMAT.format(timestamp) : "", 12f, false);
         textHolder.addView(nameView);
         textHolder.addView(dateView);
 
@@ -207,10 +223,39 @@ public class studenttask extends AppCompatActivity {
         Button openButton = new Button(this);
         openButton.setText("Open File");
         openButton.setBackgroundResource(R.drawable.btn_round_send);
-        openButton.setOnClickListener(v -> openFile(fileUri));
+        openButton.setOnClickListener(v -> {
+            ProgressBar pb = new ProgressBar(studenttask.this, null, android.R.attr.progressBarStyleSmall);
+            pb.setIndeterminate(true);
+            layout.addView(pb);
+
+            new Thread(() -> {
+                try {
+                    String authorizedUrl = BackblazeUploader.generateDownloadUrl(storedName);
+
+                    runOnUiThread(() -> {
+                        layout.removeView(pb);
+
+                        Intent p = new Intent(studenttask.this, PreviewActivity.class);
+                        p.putExtra(PreviewActivity.EXTRA_STORED_NAME, storedName);
+                        p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, displayName);
+                        startActivity(p);
+                    });
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    runOnUiThread(() -> {
+                        layout.removeView(pb);
+                        Toast.makeText(studenttask.this, "Failed to open file", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }).start();
+        });
+
         layout.addView(openButton);
 
-        addInlineCommentSection(layout, fileName);
+        String fileCommentKey = "file:" + storedName;
+        addInlineCommentSectionForId(layout, fileCommentKey);
+
         card.addView(layout);
         assignedTasksContainer.addView(card);
     }
@@ -240,36 +285,34 @@ public class studenttask extends AppCompatActivity {
         return tv;
     }
 
-    private void addInlineCommentSection(LinearLayout parent, String taskTitle) {
-        // 🔹 Divider line
+    private void addInlineCommentSection(LinearLayout parent, String announcementId) {
+        addInlineCommentSectionForId(parent, announcementId);
+    }
+
+    private void addInlineCommentSectionForId(LinearLayout parent, String idForComments) {
         View divider = new View(this);
-        divider.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 2));
+        divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2));
         divider.setBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
         parent.addView(divider);
 
-        // 🔹 Section Header
         TextView commentHeader = createTextView("💬 Comments", 15f, true);
         commentHeader.setPadding(0, 10, 0, 10);
         parent.addView(commentHeader);
 
-        // 🔹 Comment List
         LinearLayout commentList = new LinearLayout(this);
         commentList.setOrientation(LinearLayout.VERTICAL);
         commentList.setPadding(16, 8, 16, 8);
         parent.addView(commentList);
 
-        // 🔹 Comment Input Layout
         LinearLayout commentInputLayout = new LinearLayout(this);
         commentInputLayout.setOrientation(LinearLayout.HORIZONTAL);
         commentInputLayout.setGravity(Gravity.CENTER_VERTICAL);
         commentInputLayout.setPadding(8, 8, 8, 8);
 
-        // 🔹 EditText Input
         EditText commentInput = new EditText(this);
         commentInput.setHint("Add a comment...");
         commentInput.setBackgroundResource(R.drawable.input_rounded);
-        commentInput.setPadding(32, 20, 32, 20); // ⬅️ Added space inside the oval
+        commentInput.setPadding(32, 20, 32, 20);
         commentInput.setTextSize(14f);
 
         LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0,
@@ -278,7 +321,6 @@ public class studenttask extends AppCompatActivity {
         commentInput.setLayoutParams(inputParams);
         commentInputLayout.addView(commentInput);
 
-        // 🔹 Send Button (with round background)
         FrameLayout sendContainer = new FrameLayout(this);
         LinearLayout.LayoutParams sendParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -290,7 +332,6 @@ public class studenttask extends AppCompatActivity {
         sendButton.setContentDescription("Send comment");
         sendContainer.addView(sendButton);
 
-        // 🔹 Loading Spinner (hidden by default)
         ProgressBar loadingSpinner = new ProgressBar(this, null, android.R.attr.progressBarStyleSmall);
         loadingSpinner.setVisibility(View.GONE);
         loadingSpinner.setIndeterminate(true);
@@ -299,10 +340,9 @@ public class studenttask extends AppCompatActivity {
         commentInputLayout.addView(sendContainer);
         parent.addView(commentInputLayout);
 
-        // 🔹 Listen for comments in Firestore
         db.collection("comments")
-                .whereEqualTo("taskTitle", taskTitle)
-                .orderBy("timestamp")
+                .whereEqualTo("announcementId", idForComments)
+                .orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null || value == null) return;
                     commentList.removeAllViews();
@@ -311,7 +351,6 @@ public class studenttask extends AppCompatActivity {
                         String user = doc.getString("user");
                         String text = doc.getString("text");
 
-                        // Bubble style
                         LinearLayout bubble = new LinearLayout(this);
                         bubble.setOrientation(LinearLayout.VERTICAL);
                         bubble.setBackgroundResource(R.drawable.comment_bubble_bg);
@@ -334,12 +373,10 @@ public class studenttask extends AppCompatActivity {
                     }
                 });
 
-        // 🔹 Send Comment Logic
         sendButton.setOnClickListener(v -> {
             String commentText = commentInput.getText().toString().trim();
             if (commentText.isEmpty()) return;
 
-            // Disable send + show loading
             sendButton.setEnabled(false);
             sendButton.setAlpha(0.5f);
             loadingSpinner.setVisibility(View.VISIBLE);
@@ -350,8 +387,8 @@ public class studenttask extends AppCompatActivity {
                     ? currentUser.getEmail()
                     : "Anonymous";
 
-            HashMap<String, Object> data = new HashMap<>();
-            data.put("taskTitle", taskTitle);
+            Map<String, Object> data = new HashMap<>();
+            data.put("announcementId", idForComments);
             data.put("user", user);
             data.put("text", commentText);
             data.put("timestamp", new Date());
@@ -365,7 +402,6 @@ public class studenttask extends AppCompatActivity {
                         Toast.makeText(this, "Failed to send comment ❌", Toast.LENGTH_SHORT).show();
                     })
                     .addOnCompleteListener(task -> {
-                        // Re-enable and reset
                         sendButton.setEnabled(true);
                         sendButton.setAlpha(1f);
                         loadingSpinner.setVisibility(View.GONE);
@@ -373,7 +409,6 @@ public class studenttask extends AppCompatActivity {
                     });
         });
     }
-
 
     private void openFile(Uri fileUri) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -394,5 +429,26 @@ public class studenttask extends AppCompatActivity {
         filterPdfs.setBackgroundResource(R.drawable.filter_tab_bg);
         filterDocs.setBackgroundResource(R.drawable.filter_tab_bg);
         selected.setBackgroundResource(R.drawable.filter_tab_selected_bg);
+    }
+
+    private String getExtension(String name) {
+        if (name == null) return "";
+        int idx = name.lastIndexOf('.');
+        if (idx == -1) return "";
+        return name.substring(idx + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private boolean matchesFilter(String ext, String filter) {
+        if (filter.equals("all")) return true;
+        if (filter.equals("text")) return false;
+        if (filter.equals("image")) {
+            return ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png") || ext.equals("gif") || ext.equals("webp");
+        }
+        if (filter.equals("video")) {
+            return ext.equals("mp4") || ext.equals("mov") || ext.equals("mkv") || ext.equals("webm") || ext.equals("3gp");
+        }
+        if (filter.equals("pdf")) return ext.equals("pdf");
+        if (filter.equals("doc")) return ext.equals("doc") || ext.equals("docx") || ext.equals("txt") || ext.equals("odt");
+        return false;
     }
 }
