@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/previewRoot"
+    android:id="@+id/previewContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000">
 
     <ProgressBar
-        android:id="@+id/previewLoader"
+        android:id="@+id/previewProgress"
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:layout_gravity="center" />
@@ -30,7 +30,7 @@
             app:tint="#fff" />
 
         <TextView
-            android:id="@+id/fileName"
+            android:id="@+id/previewTitle"
             android:textColor="#fff"
             android:textSize="16sp"
             android:layout_marginStart="20dp"
@@ -46,25 +46,22 @@
         android:layout_height="match_parent">
 
         <com.github.chrisbanes.photoview.PhotoView
-            android:id="@+id/photoView"
+            android:id="@+id/previewImage"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="fitCenter" />
-
     </FrameLayout>
 
     <FrameLayout
-        android:id="@+id/pdfContainer"
+        android:id="@+id/docContainer"
         android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ImageView
-            android:id="@+id/pdfImage"
+        <WebView
+            android:id="@+id/previewWebView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter" />
+            android:layout_height="match_parent" />
     </FrameLayout>
 
     <FrameLayout
@@ -74,24 +71,7 @@
         android:layout_height="match_parent">
 
         <VideoView
-            android:id="@+id/videoView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </FrameLayout>
-
-    <FrameLayout
-        android:id="@+id/docContainer"
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <TextView
-            android:id="@+id/docText"
-            android:text="Opening..."
-            android:textSize="18sp"
-            android:textColor="#fff"
-            android:gravity="center"
+            android:id="@+id/previewVideo"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 

@@ -46,9 +46,14 @@ public class studenttask extends AppCompatActivity {
         backButton = findViewById(R.id.backbtn);
         settingsButton = findViewById(R.id.settingsButton);
 
-        mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
-        mediaPlayer.setLooping(true);
-        mediaPlayer.start();
+        // optional background music: guard against null resource
+        try {
+            mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
+            if (mediaPlayer != null) {
+                mediaPlayer.setLooping(true);
+                mediaPlayer.start();
+            }
+        } catch (Exception ignored){}
 
         backButton.setOnClickListener(v -> {
             stopMusic();
@@ -109,6 +114,7 @@ public class studenttask extends AppCompatActivity {
         final boolean[] hasItems = {false};
         final int[] queriesCompleted = {0};
 
+        // Announcements (text content)
         if (filter.equals("all") || filter.equals("text")) {
             db.collection("announcements").orderBy("timestamp", Query.Direction.DESCENDING)
                     .get().addOnSuccessListener(query -> {
@@ -131,18 +137,20 @@ public class studenttask extends AppCompatActivity {
             queriesCompleted[0]++;
         }
 
+        // Files: collectionGroup query across announcements/{id}/sharedFiles
         if (!filter.equals("text")) {
             db.collectionGroup("sharedFiles")
                     .orderBy("timestamp", Query.Direction.DESCENDING)
                     .get()
                     .addOnSuccessListener(query -> {
                         for (QueryDocumentSnapshot doc : query) {
-                            String displayName = doc.getString("fileName");
-                            String storedName = doc.getString("storedFileName");
+                            String displayName = doc.getString("fileName");          // what teacher named it (visible)
+                            String storedName = doc.getString("storedFileName");     // UUID stored in B2
                             Date timestamp = doc.getDate("timestamp");
-                            String parentAnnouncementId = doc.getReference().getParent().getParent().getId();
+                            String parentAnnouncementId = doc.getReference().getParent().getParent().getId(); // announcements/{id}
                             if (displayName == null || storedName == null) continue;
 
+                            // decide whether this file matches filter by extension
                             String ext = getExtension(displayName);
                             if (matchesFilter(ext, filter)) {
                                 hasItems[0] = true;
@@ -185,12 +193,18 @@ public class studenttask extends AppCompatActivity {
         contentLayout.addView(contentView);
         contentLayout.addView(timeView);
 
+        // comments for announcements use the announcementId
         addInlineCommentSection(contentLayout, announcementId);
 
         card.addView(contentLayout);
         assignedTasksContainer.addView(card);
     }
 
+    /**
+     * addTaskItem - shows a file entry (keeps your UI)
+     * storedName = the UUID/filename stored in Backblaze (we saved this in Firestore)
+     * parentAnnouncementId = announcement id where this file belongs (useful for context)
+     */
     private void addTaskItem(String displayName, String storedName, Date timestamp, String parentAnnouncementId) {
         CardView card = createModernCard();
 
@@ -224,35 +238,33 @@ public class studenttask extends AppCompatActivity {
         openButton.setText("Open File");
         openButton.setBackgroundResource(R.drawable.btn_round_send);
         openButton.setOnClickListener(v -> {
+            // generate temp authorized url (7-day) and open it in PreviewActivity
             ProgressBar pb = new ProgressBar(studenttask.this, null, android.R.attr.progressBarStyleSmall);
             pb.setIndeterminate(true);
             layout.addView(pb);
 
             new Thread(() -> {
                 try {
-                    String authorizedUrl = BackblazeUploader.generateDownloadUrl(storedName);
-
+                    String url = BackblazeUploader.generateDownloadUrl(storedName);
+                    final Intent p = new Intent(studenttask.this, PreviewActivity.class);
+                    p.putExtra(PreviewActivity.EXTRA_URL, url);
+                    p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, displayName);
                     runOnUiThread(() -> {
                         layout.removeView(pb);
-
-                        Intent p = new Intent(studenttask.this, PreviewActivity.class);
-                        p.putExtra(PreviewActivity.EXTRA_STORED_NAME, storedName);
-                        p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, displayName);
                         startActivity(p);
                     });
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                     runOnUiThread(() -> {
                         layout.removeView(pb);
-                        Toast.makeText(studenttask.this, "Failed to open file", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(studenttask.this, "Cannot open file: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
                     });
                 }
             }).start();
         });
-
         layout.addView(openButton);
 
+        // comments for files use a unique key so file-comments are separate from announcement comments
         String fileCommentKey = "file:" + storedName;
         addInlineCommentSectionForId(layout, fileCommentKey);
 
@@ -285,25 +297,37 @@ public class studenttask extends AppCompatActivity {
         return tv;
     }
 
+    /**
+     * For announcements: use announcementId as the identifier for comments
+     */
     private void addInlineCommentSection(LinearLayout parent, String announcementId) {
         addInlineCommentSectionForId(parent, announcementId);
     }
 
+    /**
+     * Generic inline comments UI that uses the provided key for Firestore comment documents' announcementId field.
+     * This lets announcements and files have separate comment threads (use 'file:<storedName>' for files).
+     */
     private void addInlineCommentSectionForId(LinearLayout parent, String idForComments) {
+        // Divider
         View divider = new View(this);
-        divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2));
+        divider.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 2));
         divider.setBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
         parent.addView(divider);
 
+        // Header
         TextView commentHeader = createTextView("💬 Comments", 15f, true);
         commentHeader.setPadding(0, 10, 0, 10);
         parent.addView(commentHeader);
 
+        // Comment list container
         LinearLayout commentList = new LinearLayout(this);
         commentList.setOrientation(LinearLayout.VERTICAL);
         commentList.setPadding(16, 8, 16, 8);
         parent.addView(commentList);
 
+        // Input layout
         LinearLayout commentInputLayout = new LinearLayout(this);
         commentInputLayout.setOrientation(LinearLayout.HORIZONTAL);
         commentInputLayout.setGravity(Gravity.CENTER_VERTICAL);
@@ -340,6 +364,7 @@ public class studenttask extends AppCompatActivity {
         commentInputLayout.addView(sendContainer);
         parent.addView(commentInputLayout);
 
+        // Listen for comments by idForComments
         db.collection("comments")
                 .whereEqualTo("announcementId", idForComments)
                 .orderBy("timestamp", Query.Direction.ASCENDING)
@@ -373,6 +398,7 @@ public class studenttask extends AppCompatActivity {
                     }
                 });
 
+        // Send comment logic: comment documents use announcementId = idForComments
         sendButton.setOnClickListener(v -> {
             String commentText = commentInput.getText().toString().trim();
             if (commentText.isEmpty()) return;
@@ -431,6 +457,7 @@ public class studenttask extends AppCompatActivity {
         selected.setBackgroundResource(R.drawable.filter_tab_selected_bg);
     }
 
+    // helper: extension from display name
     private String getExtension(String name) {
         if (name == null) return "";
         int idx = name.lastIndexOf('.');
@@ -438,9 +465,10 @@ public class studenttask extends AppCompatActivity {
         return name.substring(idx + 1).toLowerCase(Locale.ROOT);
     }
 
+    // helper: matches our filter keys
     private boolean matchesFilter(String ext, String filter) {
         if (filter.equals("all")) return true;
-        if (filter.equals("text")) return false;
+        if (filter.equals("text")) return false; // text handled in announcements
         if (filter.equals("image")) {
             return ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png") || ext.equals("gif") || ext.equals("webp");
         }
