@@ -30,7 +30,9 @@
         <activity android:name=".VideosActivity"
             android:screenOrientation="portrait"
             android:exported="true" />
-
+        <activity android:name=".PreviewActivity" />
+        <activity android:name=".ImagePreviewActivity" />
+        <activity android:name=".PdfPreviewActivity" />
         <activity android:name=".VideoPlayerActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <!--  Activity definitions  -->
