@@ -2,9 +2,9 @@ package com.example.holyinfantschool;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 public class NumberScoreActivity extends AppCompatActivity {
@@ -17,8 +17,9 @@ public class NumberScoreActivity extends AppCompatActivity {
         Button playAgainButton = findViewById(R.id.playAgainButton);
         Button playAnotherGameButton = findViewById(R.id.playAnotherGameButton);
 
-        int correct = Shape1Activity.totalCorrect;
-        int incorrect = Shape1Activity.totalIncorrect;
+        // ✅ READ FROM Numberquiz (correct)
+        int correct = Numberquiz.totalCorrect;
+        int incorrect = Numberquiz.totalIncorrect;
 
         scoreTextView.setText(
                 "✅ Correct: " + correct + "\n" +
@@ -26,15 +27,18 @@ public class NumberScoreActivity extends AppCompatActivity {
         );
 
         playAgainButton.setOnClickListener(v -> {
-            Number1Activity.correctAnswers = 0;
-            Number1Activity.incorrectAnswers = 0;
+            // reset values
+            Numberquiz.totalCorrect = 0;
+            Numberquiz.totalIncorrect = 0;
+
             startActivity(new Intent(this, Numberquiz.class));
             finish();
         });
 
         playAnotherGameButton.setOnClickListener(v -> {
-            Number1Activity.correctAnswers = 0;
-            Number1Activity.incorrectAnswers = 0;
+            Numberquiz.totalCorrect = 0;
+            Numberquiz.totalIncorrect = 0;
+
             startActivity(new Intent(this, QuizActivity.class));
             finish();
         });
