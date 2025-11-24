@@ -17,10 +17,13 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -30,8 +33,6 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
-import com.squareup.picasso.Picasso;
-
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,13 +47,15 @@ public class TeacherTask extends AppCompatActivity {
     private Button postAnnouncementBtn;
     private ImageView uploadBtn;
     private TextView emptyMessage;
-    private View blockerOverlay;
-    private ProgressBar loadingSpinner;
+
+    private ConstraintLayout progressOverlay;
+    private LinearLayout progressCard;
+    private ProgressBar progressBar;
+    private TextView progressText;
 
     private static final int PICK_FILE_REQUEST_CODE = 101;
     private static final int STORAGE_PERMISSION_CODE = 100;
 
-    // map: displayName -> Uri
     private final Map<String, Uri> uploadedFilesMap = new LinkedHashMap<>();
 
     private FirebaseFirestore db;
@@ -63,13 +66,15 @@ public class TeacherTask extends AppCompatActivity {
     private static final SimpleDateFormat DATE_FORMAT =
             new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault());
 
-    // ---------------- Notification constants ----------------
     private static final String CHANNEL_ID = "uploads_channel";
     private static final int NOTIFICATION_ID = 1201;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+
         setContentView(R.layout.activity_teacher_task);
 
         db = FirebaseFirestore.getInstance();
@@ -77,7 +82,6 @@ public class TeacherTask extends AppCompatActivity {
 
         initializeViews();
         setupListeners();
-
         createNotificationChannel();
         loadAnnouncements();
     }
@@ -91,11 +95,15 @@ public class TeacherTask extends AppCompatActivity {
         announcementTitleInput = findViewById(R.id.announcementTitleInput);
         announcementContentInput = findViewById(R.id.announcementContentInput);
         uploadedFilesContainer = findViewById(R.id.uploadedFilesContainer);
-        blockerOverlay = findViewById(R.id.blockerOverlay);
-        loadingSpinner = findViewById(R.id.loadingSpinner);
         uploadBtn = findViewById(R.id.uploadBtn);
         postAnnouncementBtn = findViewById(R.id.postAnnouncementBtn);
         emptyMessage = findViewById(R.id.emptyMessageTeacher);
+
+        // ⭐ MUST MATCH YOUR NEW XML EXACTLY
+        progressOverlay = findViewById(R.id.progressOverlay);   // ConstraintLayout
+        progressCard = findViewById(R.id.progressCard);         // LinearLayout
+        progressBar = findViewById(R.id.progressBar);           // ProgressBar
+        progressText = findViewById(R.id.progressText);         // TextView
     }
 
     private void setupListeners() {
@@ -143,8 +151,10 @@ public class TeacherTask extends AppCompatActivity {
         String content = announcementContentInput.getText().toString().trim();
 
         if (title.isEmpty()) {
-            lockUI();
+            hideKeyboard();
+            lockUI("Please enter a title...");
             Toast.makeText(this, "Please enter a title", Toast.LENGTH_SHORT).show();
+            unlockUI();
             return;
         }
 
@@ -158,8 +168,13 @@ public class TeacherTask extends AppCompatActivity {
         data.put("teacherEmail", teacherEmail);
         data.put("timestamp", new Date());
 
+        // ⭐ Hide keyboard → then show bottom sliding overlay
+        hideKeyboard();
+        lockUI("Posting announcement...");
+
         if (isEditing && editingAnnouncementId != null) {
             final String annId = editingAnnouncementId;
+
             db.collection("announcements")
                     .document(annId)
                     .update(data)
@@ -167,30 +182,41 @@ public class TeacherTask extends AppCompatActivity {
                         Toast.makeText(this, "Announcement updated", Toast.LENGTH_SHORT).show();
                         isEditing = false;
                         editingAnnouncementId = null;
+
                         formSection.setVisibility(View.GONE);
                         announcementScroll.setVisibility(View.VISIBLE);
 
                         if (!uploadedFilesMap.isEmpty()) {
                             uploadFilesForAnnouncementWithNotification(annId);
+                        } else {
+                            unlockUI();
+                            loadAnnouncements();
                         }
                     })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to update", Toast.LENGTH_SHORT).show());
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to update", Toast.LENGTH_SHORT).show();
+                        unlockUI();
+                    });
+
         } else {
             db.collection("announcements")
                     .add(data)
                     .addOnSuccessListener(docRef -> {
                         String announcementId = docRef.getId();
                         Toast.makeText(this, "Announcement posted!", Toast.LENGTH_SHORT).show();
-                        // keep uploadedFilesContainer UI for user to see; we'll clear after upload
+
                         announcementTitleInput.setText("");
                         announcementContentInput.setText("");
+
                         formSection.setVisibility(View.GONE);
                         announcementScroll.setVisibility(View.VISIBLE);
 
                         if (!uploadedFilesMap.isEmpty()) {
                             uploadFilesForAnnouncementWithNotification(announcementId);
+                        } else {
+                            unlockUI();
+                            loadAnnouncements();
                         }
-                        unlockUI();
                     })
                     .addOnFailureListener(e -> {
                         Toast.makeText(this, "Failed to post announcement", Toast.LENGTH_SHORT).show();
@@ -198,16 +224,15 @@ public class TeacherTask extends AppCompatActivity {
                     });
         }
     }
-
-    /**
-     * New: Notification-based upload flow.
-     * Sequentially upload all files and update a notification showing overall progress.
-     */
     private void uploadFilesForAnnouncementWithNotification(String announcementId) {
 
         // snapshot of entries so we don't mutate while iterating
         List<Map.Entry<String, Uri>> entries = new ArrayList<>(uploadedFilesMap.entrySet());
-        if (entries.isEmpty()) return;
+        if (entries.isEmpty()) {
+            unlockUI();
+            loadAnnouncements();
+            return;
+        }
 
         final int totalFiles = entries.size();
         final AtomicInteger completed = new AtomicInteger(0);
@@ -215,6 +240,12 @@ public class TeacherTask extends AppCompatActivity {
 
         // Show initial notification (indeterminate for current file)
         showUploadNotification("Starting upload...", 0, totalFiles);
+
+        // Set overlay to 0%
+        runOnUiThread(() -> {
+            progressText.setText("Uploading files… 0%");
+            progressBar.setProgress(0);
+        });
 
         // Run uploads on background thread (sequential)
         new Thread(() -> {
@@ -227,6 +258,28 @@ public class TeacherTask extends AppCompatActivity {
                 updateNotificationIndeterminate("Uploading " + displayName, completed.get(), totalFiles);
 
                 try {
+                    // ⭐ Smooth fake progress from 0 → 90% while upload is running
+                    runOnUiThread(() -> {
+                        progressText.setText("Uploading " + displayName + "...");
+                        progressBar.setProgress(0);
+                    });
+
+                    Thread fakeProgressThread = new Thread(() -> {
+                        int fake = 0;
+                        while (fake < 90) {
+                            fake++;
+
+                            int finalFake = fake;
+                            runOnUiThread(() -> {
+                                progressBar.setProgress(finalFake);
+                                progressText.setText("Uploading… " + finalFake + "%");
+                            });
+
+                            try { Thread.sleep(40); } catch (Exception ignored) {}
+                        }
+                    });
+                    fakeProgressThread.start();
+
                     // Blocking call to UploadCareUploader (already implemented)
                     String cdnUrl = UploadCareUploader.upload(TeacherTask.this, fileUri);
 
@@ -265,10 +318,29 @@ public class TeacherTask extends AppCompatActivity {
                     updateNotificationProgress("Uploaded " + completed.get() + " / " + totalFiles,
                             completed.get(), totalFiles);
 
-                    final int c = completed.get();
-                    runOnUiThread(() -> Toast.makeText(TeacherTask.this,
-                            "Uploaded: " + displayName + " (" + c + "/" + totalFiles + ")",
-                            Toast.LENGTH_SHORT).show());
+                    final int cFiles = completed.get();
+                    final int percent = (int) ((cFiles / (float) totalFiles) * 100f);
+
+                    // ⭐ Smooth finish from 90 → 100%
+                    for (int p = 90; p <= 100; p++) {
+                        int finalP = p;
+                        runOnUiThread(() -> {
+                            progressBar.setProgress(finalP);
+                            progressText.setText("Finishing… " + finalP + "%");
+                        });
+
+                        try { Thread.sleep(15); } catch (Exception ignored) {}
+                    }
+
+
+                    runOnUiThread(() -> {
+                        if (progressOverlay.getVisibility() != View.VISIBLE) {
+                            progressOverlay.setVisibility(View.VISIBLE);
+                        }
+
+                        progressBar.setProgress(100);
+                        progressText.setText("Upload Complete ✓");
+                    });
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -290,16 +362,16 @@ public class TeacherTask extends AppCompatActivity {
                 finishNotification("Upload completed with errors (" + completed.get() + "/" + totalFiles + ")", false);
             }
 
-            // Clear local map and UI on main thread
+            // Clear local map and UI on main thread and refresh page
             runOnUiThread(() -> {
                 uploadedFilesMap.clear();
                 uploadedFilesContainer.removeAllViews();
+                unlockUI();
+                loadAnnouncements(); // refresh UI
             });
 
         }).start();
     }
-
-    // ---------------- Notification helpers ----------------
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -384,7 +456,7 @@ public class TeacherTask extends AppCompatActivity {
     }
 
     // -------------------------------------------------------
-    // rest of your original code (unchanged)
+    // rest of your original code (unchanged but adapted to new overlay)
     // -------------------------------------------------------
 
     private void checkStoragePermission() {
@@ -439,7 +511,12 @@ public class TeacherTask extends AppCompatActivity {
         String result = null;
         try (android.database.Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
-                int idx = cursor.getColumnIndexOrThrow("_display_name");
+                int idx;
+                try {
+                    idx = cursor.getColumnIndexOrThrow("_display_name");
+                } catch (Exception ex) {
+                    idx = cursor.getColumnIndex("_display_name");
+                }
                 result = cursor.getString(idx);
             }
         } catch (Exception ignored) {}
@@ -473,8 +550,7 @@ public class TeacherTask extends AppCompatActivity {
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
-                        Toast.makeText(this, "Failed to load announcements", Toast.LENGTH_SHORT).show();
-                        return;
+                         return;
                     }
 
                     announcementListContainer.removeAllViews();
@@ -561,7 +637,7 @@ public class TeacherTask extends AppCompatActivity {
                         boolean isImage = isImageFile(ext);
 
                         if (isImage) {
-                            // ======= NEW: IMAGE as PILL-STYLE ROW (uses generic file icon) =======
+                            // IMAGE pill-style row
                             LinearLayout fileRow = new LinearLayout(this);
                             fileRow.setOrientation(LinearLayout.HORIZONTAL);
                             fileRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -573,22 +649,18 @@ public class TeacherTask extends AppCompatActivity {
                             fileRow.setLayoutParams(fileRowParams);
                             fileRow.setBackgroundResource(R.drawable.gc_file_bg);
 
-                            // Icon (generic file icon as requested - Option A)
                             ImageView fileIcon = new ImageView(this);
                             fileIcon.setImageResource(R.drawable.ic_file);
                             int iconSize = dpToPx(42);
                             LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(iconSize, iconSize);
                             iconLp.setMargins(0, 0, dpToPx(14), 0);
                             fileIcon.setLayoutParams(iconLp);
-                            // tint with orange to visually indicate image type (keeps pill coherence)
                             try {
                                 fileIcon.setColorFilter(ContextCompat.getColor(this, R.color.image_icon));
                             } catch (Exception e) {
-                                // fallback to teal if orange_700 isn't defined
                                 fileIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_700));
                             }
 
-                            // Filename text
                             TextView fileNameView = new TextView(this);
                             fileNameView.setText(fname);
                             fileNameView.setTextSize(15f);
@@ -599,7 +671,6 @@ public class TeacherTask extends AppCompatActivity {
                                     0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                             fileNameView.setLayoutParams(nameLp);
 
-                            // ext label
                             TextView extLabel = new TextView(this);
                             extLabel.setText(ext.toUpperCase());
                             extLabel.setTextSize(12f);
@@ -625,7 +696,7 @@ public class TeacherTask extends AppCompatActivity {
                             filesContainer.addView(fileRow);
 
                         } else {
-                            // NON-IMAGE: pill-style row (PPT/PDF/DOC/VIDEO/ZIP/OTHER)
+                            // NON-IMAGE pill-style row
                             LinearLayout fileRow = new LinearLayout(this);
                             fileRow.setOrientation(LinearLayout.HORIZONTAL);
                             fileRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -637,7 +708,6 @@ public class TeacherTask extends AppCompatActivity {
                             fileRow.setLayoutParams(fileRowParams);
                             fileRow.setBackgroundResource(R.drawable.gc_file_bg);
 
-                            // Icon (bigger to match pill style)
                             ImageView fileIcon = new ImageView(this);
                             fileIcon.setImageResource(getFileIcon(ext));
                             int iconSize = dpToPx(42);
@@ -645,7 +715,6 @@ public class TeacherTask extends AppCompatActivity {
                             iconLp.setMargins(0, 0, dpToPx(14), 0);
                             fileIcon.setLayoutParams(iconLp);
 
-                            // Color-code icons (PDF red, PPT orange, DOC blue, VIDEO purple, default teal)
                             int tintColor = ContextCompat.getColor(this, R.color.teal_700);
                             switch (ext) {
                                 case "pdf": tintColor = Color.parseColor("#D32F2F"); break;
@@ -656,7 +725,6 @@ public class TeacherTask extends AppCompatActivity {
                             }
                             fileIcon.setColorFilter(tintColor);
 
-                            // Filename text
                             TextView fileNameView = new TextView(this);
                             fileNameView.setText(fname);
                             fileNameView.setTextSize(15f);
@@ -667,7 +735,6 @@ public class TeacherTask extends AppCompatActivity {
                                     0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                             fileNameView.setLayoutParams(nameLp);
 
-                            // Optional size / ext label (small)
                             TextView extLabel = new TextView(this);
                             extLabel.setText(ext.toUpperCase());
                             extLabel.setTextSize(12f);
@@ -681,7 +748,6 @@ public class TeacherTask extends AppCompatActivity {
                             fileRow.addView(fileNameView);
                             fileRow.addView(extLabel);
 
-                            // Whole row clickable -> open preview
                             final String finalFurl = furl;
                             final String finalFname = fname;
                             fileRow.setOnClickListener(v -> {
@@ -811,18 +877,48 @@ public class TeacherTask extends AppCompatActivity {
         return tv;
     }
 
-    private void lockUI() {
-        blockerOverlay.setVisibility(View.VISIBLE);
-        loadingSpinner.setVisibility(View.VISIBLE);
+    // NEW lock/unlock using progressOverlay
+    private void lockUI(String message) {
+        hideKeyboard();
+
+        if (progressOverlay != null) {
+            progressOverlay.setVisibility(View.VISIBLE);
+        }
+
+        if (progressCard != null) {
+            progressCard.clearAnimation();
+            progressCard.startAnimation(
+                    AnimationUtils.loadAnimation(this, R.anim.slide_up)
+            );
+        }
+
+        if (progressText != null) {
+            progressText.setText(message != null ? message : "Loading...");
+        }
+
+        if (progressBar != null) {
+            progressBar.setProgress(0);
+        }
+
+        // Disable touches
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
         );
     }
 
+    private void hideKeyboard() {
+        View view = getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
     private void unlockUI() {
-        blockerOverlay.setVisibility(View.GONE);
-        loadingSpinner.setVisibility(View.GONE);
+        if (progressOverlay != null) {
+            progressOverlay.setVisibility(View.GONE);
+        }
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
     }
 

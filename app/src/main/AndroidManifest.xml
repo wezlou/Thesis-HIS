@@ -38,7 +38,10 @@
         <activity android:name=".VideoPlayerActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <!--  Activity definitions  -->
-        <activity android:name=".TeacherTask" android:exported="false"/>
+        <activity
+            android:name=".TeacherTask"
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan" />
         <activity android:name=".Numberquiz" />
         <activity android:name=".TeacherMail" android:exported="false"/>
         <activity android:name=".TeacherCompletedTask" android:exported="false"/>

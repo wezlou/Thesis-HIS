@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0F0A">
+    android:background="#0A0F0A"
+    android:fitsSystemWindows="true">
 
     <!-- TOP BAR -->
     <LinearLayout
         android:id="@+id/topBarTeacher"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="60dp"
         android:orientation="horizontal"
         android:background="#101510"
         android:gravity="center_vertical"
         android:padding="12dp"
-        android:elevation="6dp">
+        android:elevation="6dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
             android:id="@+id/backToTeacherSite"
@@ -45,11 +49,14 @@
     <!-- ANNOUNCEMENT LIST -->
     <ScrollView
         android:id="@+id/announcementScroll"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/topBarTeacher"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:fillViewport="true"
-        android:padding="12dp">
+        android:padding="12dp"
+        app:layout_constraintTop_toBottomOf="@id/topBarTeacher"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:id="@+id/announcementListContainer"
@@ -66,24 +73,29 @@
         android:text="No announcements yet 📭"
         android:textSize="16sp"
         android:textColor="#666"
-        android:layout_centerInParent="true"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/topBarTeacher"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- CREATE ANNOUNCEMENT FORM -->
     <ScrollView
         android:id="@+id/formSection"
         android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/topBarTeacher"
-        android:padding="16dp">
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/topBarTeacher"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- TITLE -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -93,7 +105,6 @@
                 android:textColor="#E0E0E0"
                 android:paddingBottom="12dp" />
 
-            <!-- TITLE INPUT -->
             <EditText
                 android:id="@+id/announcementTitleInput"
                 android:hint="Title"
@@ -104,7 +115,6 @@
                 android:textColorHint="#6A6A6A"
                 android:background="@drawable/edittext_dark" />
 
-            <!-- CONTENT INPUT -->
             <EditText
                 android:id="@+id/announcementContentInput"
                 android:hint="Enter announcement..."
@@ -117,7 +127,6 @@
                 android:background="@drawable/edittext_dark"
                 android:layout_marginTop="12dp" />
 
-            <!-- ATTACH FILES SECTION -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -134,7 +143,6 @@
                     android:textColor="#C7FFC7"
                     android:paddingBottom="12dp" />
 
-                <!-- UPLOAD BOX -->
                 <LinearLayout
                     android:id="@+id/uploadContainer"
                     android:layout_width="match_parent"
@@ -184,7 +192,6 @@
                     android:padding="6dp" />
             </LinearLayout>
 
-            <!-- POST BUTTON -->
             <Button
                 android:id="@+id/postAnnouncementBtn"
                 android:layout_width="match_parent"
@@ -197,18 +204,55 @@
         </LinearLayout>
     </ScrollView>
 
-    <View
-        android:id="@+id/blockerOverlay"
+    <!-- ⭐ FIXED CENTERED LOADER OVERLAY (Guarantees center on all phones) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/progressOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="gone"
         android:background="#80000000"
-        android:visibility="gone" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <ProgressBar
-        android:id="@+id/loadingSpinner"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
-        android:layout_centerInParent="true"
-        android:visibility="gone"/>
+        <LinearLayout
+            android:id="@+id/progressCard"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="28dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/loader_card_bg"
+            android:elevation="16dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-</RelativeLayout>
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="220dp"
+                android:layout_height="wrap_content"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:max="100"
+                android:progress="0"
+                android:indeterminate="false"
+                android:progressDrawable="@drawable/loader_progress_bar"
+                android:padding="0dp" />
+
+            <TextView
+                android:id="@+id/progressText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Uploading..."
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:paddingTop="16dp"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
