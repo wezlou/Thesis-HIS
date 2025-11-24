@@ -4,38 +4,63 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    android:layout_marginBottom="14dp"
+    app:cardUseCompatPadding="true"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="6dp"
+    android:background="@android:color/transparent"
+    app:strokeColor="#1F3926"
+    app:strokeWidth="2dp"
+    app:cardBackgroundColor="#0D120D">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
+        <!-- Title -->
+        <TextView
+            android:id="@+id/announcementTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Important Announcement"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#C7FFC7"/>
+
+        <!-- Teacher -->
         <TextView
             android:id="@+id/teacherEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/primary_color"
-            android:textStyle="bold"
-            android:textSize="14sp"/>
+            android:text="By teacher@mail.com"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"
+            android:textColor="#7FAF7F"/>
 
+        <!-- Body -->
         <TextView
             android:id="@+id/announcementText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="14sp"
-            android:textColor="@color/primary_text"/>
+            android:text="This is the announcement content..."
+            android:textSize="15sp"
+            android:layout_marginTop="12dp"
+            android:textColor="#D6E9D6"
+            android:lineSpacingExtra="4dp"/>
 
+        <!-- Time -->
         <TextView
             android:id="@+id/timestamp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:text="Nov 23, 4:20 PM"
+            android:textColor="#6A886A"
             android:textSize="12sp"
-            android:textColor="@color/secondary_text"/>
+            android:gravity="end"
+            android:layout_marginTop="12dp"/>
+
     </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>

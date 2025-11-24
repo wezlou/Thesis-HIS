@@ -1,248 +1,286 @@
 package com.example.holyinfantschool;
 
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.pdf.PdfRenderer;
-import android.media.MediaPlayer;
+import android.annotation.SuppressLint;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
-import android.util.Log;
-import android.webkit.MimeTypeMap;
-import android.widget.*;
+import android.os.Handler;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ProgressBar;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.github.chrisbanes.photoview.PhotoView;
+import com.squareup.picasso.Picasso;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.URL;
-import android.view.View;
-
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.PlayerView;
 
 public class PreviewActivity extends AppCompatActivity {
 
-    public static final String EXTRA_URL = "extra_url";
-    public static final String EXTRA_DISPLAY_NAME = "extra_display_name";
+    public static final String EXTRA_URL = "url";
+    public static final String EXTRA_DISPLAY_NAME = "displayName";
 
-    FrameLayout container;
-    ProgressBar progress;
-    PhotoView imageView;
-    VideoView videoView;
-    ImageButton closeBtn;
-    TextView titleView;
+    private FrameLayout imageContainer, videoContainer, docContainer;
+    private ProgressBar previewProgress;
 
+    // IMAGE
+    private PhotoView previewImage;
+
+    // PDF
+    private WebView previewWebView;
+
+    // VIDEO (ExoPlayer)
+    private PlayerView exoPlayerView;
+    private ExoPlayer player;
+    private SeekBar seekBar;
+    private ImageButton playPauseBtn;
+
+    private boolean uiVisible = true;
+    private boolean playerReady = false;
+
+    private final Handler handler = new Handler();
+
+    private View topBar, videoTapOverlay;
+    private TextView previewTitle;
+    private ImageButton closeBtn;
+
+    private GestureDetector gestureDetector;
+
+    private String fileUrl;
+    private String fileName;
+
+    @OptIn(markerClass = UnstableApi.class)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_preview);
 
-        container = findViewById(R.id.previewContainer);
-        progress = findViewById(R.id.previewProgress);
-        imageView = findViewById(R.id.previewImage);
-        videoView = findViewById(R.id.previewVideo);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        // Top UI
+        topBar = findViewById(R.id.topBar);
         closeBtn = findViewById(R.id.closePreview);
-        titleView = findViewById(R.id.previewTitle);
+        previewTitle = findViewById(R.id.previewTitle);
+        previewProgress = findViewById(R.id.previewProgress);
 
-        closeBtn.setOnClickListener(v -> finish());
+        // Containers
+        imageContainer = findViewById(R.id.imageContainer);
+        videoContainer = findViewById(R.id.videoContainer);
+        docContainer = findViewById(R.id.docContainer);
 
-        String url = getIntent().getStringExtra(EXTRA_URL);
-        String name = getIntent().getStringExtra(EXTRA_DISPLAY_NAME);
+        // Image
+        previewImage = findViewById(R.id.previewImage);
 
-        titleView.setText(name);
+        // PDF
+        previewWebView = findViewById(R.id.previewWebView);
 
-        if (url == null) {
-            Toast.makeText(this, "Invalid file", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
+        // Video
+        exoPlayerView = findViewById(R.id.exoPlayerView);
+        seekBar = findViewById(R.id.previewSeekBar);
+        playPauseBtn = findViewById(R.id.playPauseBtn);
+        videoTapOverlay = findViewById(R.id.videoTapOverlay);
 
-        previewFile(url, name);
-    }
+        // Gesture detector (tap to hide UI)
+        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override public boolean onSingleTapConfirmed(MotionEvent e) {
+                toggleUI();
+                return true;
+            }
+        });
 
-    private void previewFile(String url, String name) {
-        progress.setVisibility(View.VISIBLE);
+        findViewById(R.id.previewContainer).setOnTouchListener((v, ev) -> gestureDetector.onTouchEvent(ev));
+        videoTapOverlay.setOnTouchListener((v, ev) -> gestureDetector.onTouchEvent(ev));
 
-        String ext = getExtension(name);
-        if (ext.isEmpty()) ext = getExtension(url);
+        closeBtn.setOnClickListener(v -> finishWithAnimation());
 
-        ext = ext.toLowerCase();
-
-        if (isImage(ext)) {
-            loadImage(url);
-        } else if (isVideo(ext)) {
-            loadVideo(url);
-        } else if (ext.equals("pdf")) {
-            loadPdf(url, name);
-        } else {
-            downloadAndOpenExternally(url, name);
-        }
-    }
-
-    // ------------------- IMAGE (universal) -------------------
-    private void loadImage(String url) {
-        hideAll();
-        imageView.setVisibility(View.VISIBLE);
-        progress.setVisibility(View.VISIBLE);
-
-        new Thread(() -> {
-            try {
-                // 1. Download file completely into cache
-                File out = new File(getCacheDir(), "preview_img_" + System.currentTimeMillis() + ".jpg");
-
-                InputStream in = new URL(url).openStream();
-                FileOutputStream fo = new FileOutputStream(out);
-
-                byte[] buf = new byte[4096];
-                int n;
-                while ((n = in.read(buf)) != -1) {
-                    fo.write(buf, 0, n);
+        // SeekBar events
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean user) {}
+            @Override public void onStartTrackingTouch(SeekBar s) {}
+            @Override public void onStopTrackingTouch(SeekBar s) {
+                if (player != null && playerReady) {
+                    long pos = (long) ((s.getProgress() / 100f) * player.getDuration());
+                    player.seekTo(pos);
                 }
+            }
+        });
 
-                fo.close();
-                in.close();
+        // Play / Pause button
+        playPauseBtn.setOnClickListener(v -> {
+            if (player == null || !playerReady) return;
+            if (player.isPlaying()) {
+                player.pause();
+                playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+            } else {
+                player.play();
+                playPauseBtn.setImageResource(android.R.drawable.ic_media_pause);
+            }
+        });
 
-                // 2. Decode from the FILE (MTK safe)
-                Bitmap bitmap = BitmapFactory.decodeFile(out.getAbsolutePath());
+        // Get data
+        fileUrl = getIntent().getStringExtra(EXTRA_URL);
+        fileName = getIntent().getStringExtra(EXTRA_DISPLAY_NAME);
 
-                runOnUiThread(() -> {
-                    progress.setVisibility(View.GONE);
+        previewTitle.setText(fileName);
 
-                    if (bitmap != null) {
-                        imageView.setImageBitmap(bitmap);
-                    } else {
-                        Toast.makeText(this, "Image decode failed (MTK)", Toast.LENGTH_LONG).show();
+        String ext = getExt(fileName);
+        if (isImage(ext)) loadImage(fileUrl);
+        else if (isVideo(ext)) loadVideo(fileUrl);
+        else loadPdf(fileUrl);
+    }
+
+    // --------- IMAGE ---------
+    private void loadImage(String url) {
+        showOnly(imageContainer);
+        previewProgress.setVisibility(View.VISIBLE);
+
+        Picasso.get()
+                .load(url)
+                .fit()
+                .centerInside()
+                .into(previewImage, new com.squareup.picasso.Callback() {
+                    @Override public void onSuccess() {
+                        previewProgress.setVisibility(View.GONE);
+                    }
+                    @Override public void onError(Exception e) {
+                        previewProgress.setVisibility(View.GONE);
+                        Toast.makeText(PreviewActivity.this, "Image load failed", Toast.LENGTH_SHORT).show();
                     }
                 });
 
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    progress.setVisibility(View.GONE);
-                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
-                });
-            }
-        }).start();
+        previewImage.setOnClickListener(v -> toggleUI());
     }
 
-    // ------------------- VIDEO (universal) -------------------
+    // --------- PDF ---------
+    @SuppressLint("SetJavaScriptEnabled")
+    private void loadPdf(String url) {
+        showOnly(docContainer);
+        previewProgress.setVisibility(View.VISIBLE);
+
+        previewWebView.getSettings().setJavaScriptEnabled(true);
+        previewWebView.getSettings().setBuiltInZoomControls(true);
+        previewWebView.getSettings().setDisplayZoomControls(false);
+        previewWebView.setWebChromeClient(new WebChromeClient());
+        previewWebView.loadUrl("https://docs.google.com/gview?embedded=true&url=" + url);
+
+        previewProgress.setVisibility(View.GONE);
+    }
+
+    // --------- VIDEO ---------
     private void loadVideo(String url) {
-        hideAll();
-        progress.setVisibility(View.GONE);
-        videoView.setVisibility(View.VISIBLE);
+        showOnly(videoContainer);
+        previewProgress.setVisibility(View.VISIBLE);
 
-        try {
-            videoView.setVideoURI(Uri.parse(url));
-            MediaController mc = new MediaController(this);
-            videoView.setMediaController(mc);
-            videoView.start();
-        } catch (Exception e) {
-            Toast.makeText(this, "Cannot play video", Toast.LENGTH_SHORT).show();
-        }
-    }
+        player = new ExoPlayer.Builder(this).build();
+        exoPlayerView.setPlayer(player);
 
-    // ------------------- PDF (MTK SAFE) -------------------
-    private void loadPdf(String url, String name) {
-        hideAll();
+        MediaItem mediaItem = MediaItem.fromUri(Uri.parse(url));
+        player.setMediaItem(mediaItem);
 
-        new Thread(() -> {
-            try {
-                // Download PDF into cache
-                File pdfFile = downloadTemp(url, name);
+        player.setPlayWhenReady(true);
+        player.prepare();
 
-                runOnUiThread(() -> {
-                    progress.setVisibility(View.GONE);
-                    openPdfNative(pdfFile);
-                });
-
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "PDF load failed", Toast.LENGTH_SHORT).show());
+        player.addListener(new androidx.media3.common.Player.Listener() {
+            @Override
+            public void onPlaybackStateChanged(int state) {
+                if (state == androidx.media3.common.Player.STATE_READY) {
+                    previewProgress.setVisibility(View.GONE);
+                    playerReady = true;
+                    playPauseBtn.setImageResource(android.R.drawable.ic_media_pause);
+                    startSeekUpdater();
+                }
             }
-        }).start();
-    }
 
-    private void openPdfNative(File file) {
-        try {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(Uri.fromFile(file), "application/pdf");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(this, "No PDF viewer installed", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    // ------------------- DOC / PPT / XLS fallback -------------------
-    private void downloadAndOpenExternally(String url, String name) {
-        hideAll();
-        new Thread(() -> {
-            try {
-                File file = downloadTemp(url, name);
-
-                runOnUiThread(() -> {
-                    progress.setVisibility(View.GONE);
-                    openExternal(file);
-                });
-
-            } catch (Exception e) {
-                runOnUiThread(() ->
-                        Toast.makeText(this, "Cannot open file", Toast.LENGTH_SHORT).show()
-                );
+            @Override
+            public void onPlayerError(androidx.media3.common.PlaybackException error) {
+                Toast.makeText(PreviewActivity.this, "Cannot play video", Toast.LENGTH_LONG).show();
             }
-        }).start();
+        });
     }
 
-    private void openExternal(File file) {
-        try {
-            String mime = getMime(file.getName());
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(Uri.fromFile(file), mime);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(this, "No app installed to open this file", Toast.LENGTH_LONG).show();
+    private void startSeekUpdater() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (player != null && playerReady) {
+                    long pos = player.getCurrentPosition();
+                    long dur = player.getDuration();
+                    if (dur > 0) {
+                        int percent = (int) ((pos * 100f) / dur);
+                        seekBar.setProgress(percent);
+                    }
+                }
+                handler.postDelayed(this, 300);
+            }
+        }, 300);
+    }
+
+    // --------- UI HELPERS ---------
+
+    private void showOnly(View v) {
+        imageContainer.setVisibility(View.GONE);
+        videoContainer.setVisibility(View.GONE);
+        docContainer.setVisibility(View.GONE);
+        v.setVisibility(View.VISIBLE);
+    }
+
+    private void toggleUI() {
+        uiVisible = !uiVisible;
+        if (uiVisible) {
+            topBar.animate().alpha(1f).setDuration(180);
+            topBar.setVisibility(View.VISIBLE);
+        } else {
+            topBar.animate().alpha(0f).setDuration(180)
+                    .withEndAction(() -> topBar.setVisibility(View.GONE));
         }
     }
 
-    // ------------------- HELPERS -------------------
-    private File downloadTemp(String url, String name) throws Exception {
-        InputStream in = new URL(url).openStream();
-        File outFile = new File(getCacheDir(), name);
-        FileOutputStream out = new FileOutputStream(outFile);
-
-        byte[] buf = new byte[4096];
-        int n;
-        while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
-
-        out.close();
-        in.close();
-        return outFile;
-    }
-
-    private void hideAll() {
-        imageView.setVisibility(View.GONE);
-        videoView.setVisibility(View.GONE);
-    }
-
-    private String getExtension(String name) {
+    private String getExt(String name) {
         int i = name.lastIndexOf('.');
-        if (i == -1) return "";
-        return name.substring(i + 1);
+        return i == -1 ? "" : name.substring(i + 1).toLowerCase();
     }
 
-    private boolean isImage(String ext) {
-        return ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png")
-                || ext.equals("gif") || ext.equals("webp");
+    private boolean isImage(String e) {
+        return e.equals("jpg") || e.equals("jpeg") || e.equals("png")
+                || e.equals("gif") || e.equals("webp") || e.equals("bmp") || e.equals("heic");
     }
 
-    private boolean isVideo(String ext) {
-        return ext.equals("mp4") || ext.equals("mov") || ext.equals("mkv")
-                || ext.equals("3gp") || ext.equals("webm");
+    private boolean isVideo(String e) {
+        return e.equals("mp4") || e.equals("mkv") || e.equals("webm")
+                || e.equals("mov") || e.equals("3gp");
     }
 
-    private String getMime(String filename) {
-        String ext = getExtension(filename);
-        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+    private void finishWithAnimation() {
+        View root = findViewById(R.id.previewContainer);
+        root.animate()
+                .translationY(root.getHeight() * 0.25f)
+                .alpha(0f)
+                .setDuration(220)
+                .withEndAction(() -> {
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_out, android.R.anim.slide_out_right);
+                })
+                .start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (player != null) {
+            player.release();
+        }
+        super.onDestroy();
     }
 }

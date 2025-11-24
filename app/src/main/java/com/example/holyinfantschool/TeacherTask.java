@@ -1,29 +1,40 @@
 package com.example.holyinfantschool;
 
+import android.Manifest;
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TeacherTask extends AppCompatActivity {
 
@@ -32,8 +43,11 @@ public class TeacherTask extends AppCompatActivity {
     private ImageView backBtn, createAnnouncementBtn;
     private EditText announcementTitleInput, announcementContentInput;
     private LinearLayout uploadedFilesContainer;
-    private Button uploadBtn, postAnnouncementBtn;
+    private Button postAnnouncementBtn;
+    private ImageView uploadBtn;
     private TextView emptyMessage;
+    private View blockerOverlay;
+    private ProgressBar loadingSpinner;
 
     private static final int PICK_FILE_REQUEST_CODE = 101;
     private static final int STORAGE_PERMISSION_CODE = 100;
@@ -49,6 +63,10 @@ public class TeacherTask extends AppCompatActivity {
     private static final SimpleDateFormat DATE_FORMAT =
             new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault());
 
+    // ---------------- Notification constants ----------------
+    private static final String CHANNEL_ID = "uploads_channel";
+    private static final int NOTIFICATION_ID = 1201;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +78,7 @@ public class TeacherTask extends AppCompatActivity {
         initializeViews();
         setupListeners();
 
+        createNotificationChannel();
         loadAnnouncements();
     }
 
@@ -72,6 +91,8 @@ public class TeacherTask extends AppCompatActivity {
         announcementTitleInput = findViewById(R.id.announcementTitleInput);
         announcementContentInput = findViewById(R.id.announcementContentInput);
         uploadedFilesContainer = findViewById(R.id.uploadedFilesContainer);
+        blockerOverlay = findViewById(R.id.blockerOverlay);
+        loadingSpinner = findViewById(R.id.loadingSpinner);
         uploadBtn = findViewById(R.id.uploadBtn);
         postAnnouncementBtn = findViewById(R.id.postAnnouncementBtn);
         emptyMessage = findViewById(R.id.emptyMessageTeacher);
@@ -122,6 +143,7 @@ public class TeacherTask extends AppCompatActivity {
         String content = announcementContentInput.getText().toString().trim();
 
         if (title.isEmpty()) {
+            lockUI();
             Toast.makeText(this, "Please enter a title", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -149,7 +171,7 @@ public class TeacherTask extends AppCompatActivity {
                         announcementScroll.setVisibility(View.VISIBLE);
 
                         if (!uploadedFilesMap.isEmpty()) {
-                            uploadFilesForAnnouncement(annId);
+                            uploadFilesForAnnouncementWithNotification(annId);
                         }
                     })
                     .addOnFailureListener(e -> Toast.makeText(this, "Failed to update", Toast.LENGTH_SHORT).show());
@@ -159,56 +181,211 @@ public class TeacherTask extends AppCompatActivity {
                     .addOnSuccessListener(docRef -> {
                         String announcementId = docRef.getId();
                         Toast.makeText(this, "Announcement posted!", Toast.LENGTH_SHORT).show();
-                        uploadedFilesContainer.removeAllViews();
+                        // keep uploadedFilesContainer UI for user to see; we'll clear after upload
                         announcementTitleInput.setText("");
                         announcementContentInput.setText("");
                         formSection.setVisibility(View.GONE);
                         announcementScroll.setVisibility(View.VISIBLE);
 
                         if (!uploadedFilesMap.isEmpty()) {
-                            uploadFilesForAnnouncement(announcementId);
+                            uploadFilesForAnnouncementWithNotification(announcementId);
                         }
+                        unlockUI();
                     })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to post announcement", Toast.LENGTH_SHORT).show());
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to post announcement", Toast.LENGTH_SHORT).show();
+                        unlockUI();
+                    });
         }
     }
 
-    private void uploadFilesForAnnouncement(String announcementId) {
-        for (Map.Entry<String, Uri> entry : uploadedFilesMap.entrySet()) {
-            final String displayName = entry.getKey();
-            final Uri fileUri = entry.getValue();
+    /**
+     * New: Notification-based upload flow.
+     * Sequentially upload all files and update a notification showing overall progress.
+     */
+    private void uploadFilesForAnnouncementWithNotification(String announcementId) {
 
-            // Upload in background thread
-            new Thread(() -> {
+        // snapshot of entries so we don't mutate while iterating
+        List<Map.Entry<String, Uri>> entries = new ArrayList<>(uploadedFilesMap.entrySet());
+        if (entries.isEmpty()) return;
+
+        final int totalFiles = entries.size();
+        final AtomicInteger completed = new AtomicInteger(0);
+        final AtomicInteger failed = new AtomicInteger(0);
+
+        // Show initial notification (indeterminate for current file)
+        showUploadNotification("Starting upload...", 0, totalFiles);
+
+        // Run uploads on background thread (sequential)
+        new Thread(() -> {
+            for (int idx = 0; idx < entries.size(); idx++) {
+                Map.Entry<String, Uri> entry = entries.get(idx);
+                final String displayName = entry.getKey();
+                final Uri fileUri = entry.getValue();
+
+                // Update notification to show which file is uploading (indeterminate)
+                updateNotificationIndeterminate("Uploading " + displayName, completed.get(), totalFiles);
+
                 try {
-                    // Upload to Uploadcare and get CDN URL (blocking call, runs on this background thread)
+                    // Blocking call to UploadCareUploader (already implemented)
                     String cdnUrl = UploadCareUploader.upload(TeacherTask.this, fileUri);
 
+                    // Add file metadata to Firestore under announcement -> sharedFiles
                     Map<String, Object> fileData = new HashMap<>();
                     fileData.put("fileName", displayName);
-                    fileData.put("fileUrl", cdnUrl); // permanent public URL from Uploadcare
+                    fileData.put("fileUrl", cdnUrl);
                     fileData.put("timestamp", new Date());
 
+                    // Add to Firestore (fire-and-forget but we'll wait for completion to maintain ordering)
+                    final Object lock = new Object();
+                    final boolean[] firestoreOk = {false};
                     db.collection("announcements")
                             .document(announcementId)
                             .collection("sharedFiles")
-                            .add(fileData);
+                            .add(fileData)
+                            .addOnSuccessListener(docRef -> {
+                                firestoreOk[0] = true;
+                                synchronized (lock) { lock.notify(); }
+                            })
+                            .addOnFailureListener(e -> {
+                                firestoreOk[0] = false;
+                                synchronized (lock) { lock.notify(); }
+                            });
 
-                    runOnUiThread(() ->
-                            Toast.makeText(TeacherTask.this, "Uploaded: " + displayName, Toast.LENGTH_SHORT).show()
-                    );
+                    // Wait up to short time for Firestore write to complete to keep ordering consistent
+                    synchronized (lock) {
+                        try {
+                            lock.wait(5000); // wait up to 5s
+                        } catch (InterruptedException ignored) {}
+                    }
+
+                    completed.incrementAndGet();
+
+                    // Update determinate overall progress
+                    updateNotificationProgress("Uploaded " + completed.get() + " / " + totalFiles,
+                            completed.get(), totalFiles);
+
+                    final int c = completed.get();
+                    runOnUiThread(() -> Toast.makeText(TeacherTask.this,
+                            "Uploaded: " + displayName + " (" + c + "/" + totalFiles + ")",
+                            Toast.LENGTH_SHORT).show());
+
                 } catch (Exception e) {
                     e.printStackTrace();
+                    failed.incrementAndGet();
+                    // update notification to reflect failure for this file
+                    updateNotificationProgress("Failed: " + displayName, completed.get(), totalFiles);
+                    final String errMsg = e.getMessage() != null ? e.getMessage() : "Upload error";
                     runOnUiThread(() -> Toast.makeText(TeacherTask.this,
-                            "Upload failed: " + displayName + " — " + e.getMessage(), Toast.LENGTH_LONG).show());
+                            "Upload failed: " + displayName + " — " + errMsg, Toast.LENGTH_LONG).show());
                 }
-            }).start();
-        }
+            }
 
-        // clear selections locally
-        uploadedFilesMap.clear();
-        runOnUiThread(() -> uploadedFilesContainer.removeAllViews());
+            // All files processed
+            boolean anyFailed = failed.get() > 0;
+            if (!anyFailed) {
+                // success
+                finishNotification("All files uploaded (" + completed.get() + "/" + totalFiles + ")", true);
+            } else {
+                finishNotification("Upload completed with errors (" + completed.get() + "/" + totalFiles + ")", false);
+            }
+
+            // Clear local map and UI on main thread
+            runOnUiThread(() -> {
+                uploadedFilesMap.clear();
+                uploadedFilesContainer.removeAllViews();
+            });
+
+        }).start();
     }
+
+    // ---------------- Notification helpers ----------------
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "File uploads";
+            String description = "Notifications for ongoing file uploads";
+            int importance = NotificationManager.IMPORTANCE_LOW; // low to avoid sound
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (nm != null) nm.createNotificationChannel(channel);
+        }
+    }
+
+    private void showUploadNotification(String title, int completedFiles, int totalFiles) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_upload)
+                .setContentTitle(title)
+                .setContentText("Uploading attachments")
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+                .setProgress(totalFiles, completedFiles, totalFiles == 0); // indeterminate if totalFiles==0
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, builder.build());
+    }
+
+    private void updateNotificationIndeterminate(String title, int completedFiles, int totalFiles) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_upload)
+                .setContentTitle(title)
+                .setContentText("Uploading attachments")
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+                .setProgress(totalFiles, completedFiles, true); // indeterminate for current file
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, builder.build());
+    }
+
+    private void updateNotificationProgress(String title, int completedFiles, int totalFiles) {
+        int progressPercent = 0;
+        if (totalFiles > 0) progressPercent = (int) ((completedFiles / (float) totalFiles) * 100f);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_upload)
+                .setContentTitle(title)
+                .setContentText("Uploaded " + completedFiles + " of " + totalFiles)
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+                .setProgress(100, progressPercent, false);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, builder.build());
+    }
+
+    private void finishNotification(String title, boolean success) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(success ? R.drawable.ic_check : R.drawable.ic_error)
+                .setContentTitle(title)
+                .setContentText(success ? "All uploads finished" : "Some uploads failed")
+                .setOnlyAlertOnce(true)
+                .setOngoing(false)
+                .setProgress(0, 0, false)
+                .setAutoCancel(true);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, builder.build());
+
+        // remove it from shade after short delay (optional)
+        final NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+        new Thread(() -> {
+            try { Thread.sleep(3500); } catch (InterruptedException ignored) {}
+            nm.cancel(NOTIFICATION_ID);
+        }).start();
+    }
+
+    // -------------------------------------------------------
+    // rest of your original code (unchanged)
+    // -------------------------------------------------------
 
     private void checkStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -333,7 +510,7 @@ public class TeacherTask extends AppCompatActivity {
         topRow.setGravity(Gravity.CENTER_VERTICAL);
 
         TextView titleView = createTextView(title, 18f, true);
-        titleView.setTextColor(ContextCompat.getColor(this, R.color.black));
+        titleView.setTextColor(Color.parseColor("#E8FFE8"));
         LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         titleView.setLayoutParams(titleParams);
 
@@ -362,33 +539,160 @@ public class TeacherTask extends AppCompatActivity {
         contentLayout.addView(contentView);
         contentLayout.addView(timeView);
 
+        // ============ FILES CONTAINER WITH PREVIEW ============
         LinearLayout filesContainer = new LinearLayout(this);
         filesContainer.setOrientation(LinearLayout.VERTICAL);
         filesContainer.setPadding(0, 12, 0, 12);
         contentLayout.addView(filesContainer);
 
+        // Listen for sharedFiles
         db.collection("announcements").document(announcementId).collection("sharedFiles")
                 .orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((filesSnap, err) -> {
                     if (err != null || filesSnap == null) return;
                     filesContainer.removeAllViews();
+
                     for (DocumentSnapshot f : filesSnap) {
                         String fname = f.getString("fileName");
                         String furl = f.getString("fileUrl");
                         if (fname == null || furl == null) continue;
 
-                        TextView fileView = createTextView(fname, 14f, false);
-                        fileView.setOnClickListener(v -> {
+                        String ext = getFileExtension(fname).toLowerCase();
+                        boolean isImage = isImageFile(ext);
+
+                        if (isImage) {
+                            // ======= NEW: IMAGE as PILL-STYLE ROW (uses generic file icon) =======
+                            LinearLayout fileRow = new LinearLayout(this);
+                            fileRow.setOrientation(LinearLayout.HORIZONTAL);
+                            fileRow.setGravity(Gravity.CENTER_VERTICAL);
+                            fileRow.setPadding(20, 18, 20, 18);
+                            LinearLayout.LayoutParams fileRowParams = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT);
+                            fileRowParams.setMargins(0, 8, 0, 8);
+                            fileRow.setLayoutParams(fileRowParams);
+                            fileRow.setBackgroundResource(R.drawable.gc_file_bg);
+
+                            // Icon (generic file icon as requested - Option A)
+                            ImageView fileIcon = new ImageView(this);
+                            fileIcon.setImageResource(R.drawable.ic_file);
+                            int iconSize = dpToPx(42);
+                            LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(iconSize, iconSize);
+                            iconLp.setMargins(0, 0, dpToPx(14), 0);
+                            fileIcon.setLayoutParams(iconLp);
+                            // tint with orange to visually indicate image type (keeps pill coherence)
                             try {
-                                Intent p = new Intent(TeacherTask.this, PreviewActivity.class);
-                                p.putExtra(PreviewActivity.EXTRA_URL, furl);
-                                p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, fname);
-                                startActivity(p);
-                            } catch (Exception ex) {
-                                Toast.makeText(TeacherTask.this, "Cannot open file", Toast.LENGTH_SHORT).show();
+                                fileIcon.setColorFilter(ContextCompat.getColor(this, R.color.image_icon));
+                            } catch (Exception e) {
+                                // fallback to teal if orange_700 isn't defined
+                                fileIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_700));
                             }
-                        });
-                        filesContainer.addView(fileView);
+
+                            // Filename text
+                            TextView fileNameView = new TextView(this);
+                            fileNameView.setText(fname);
+                            fileNameView.setTextSize(15f);
+                            fileNameView.setTextColor(Color.WHITE);
+                            fileNameView.setMaxLines(1);
+                            fileNameView.setEllipsize(TextUtils.TruncateAt.END);
+                            LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(
+                                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                            fileNameView.setLayoutParams(nameLp);
+
+                            // ext label
+                            TextView extLabel = new TextView(this);
+                            extLabel.setText(ext.toUpperCase());
+                            extLabel.setTextSize(12f);
+                            extLabel.setTextColor(Color.parseColor("#BDBDBD"));
+                            LinearLayout.LayoutParams extLp = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                            extLp.setMargins(dpToPx(8), 0, 0, 0);
+                            extLabel.setLayoutParams(extLp);
+
+                            fileRow.addView(fileIcon);
+                            fileRow.addView(fileNameView);
+                            fileRow.addView(extLabel);
+
+                            final String finalFurlImg = furl;
+                            final String finalFnameImg = fname;
+                            fileRow.setOnClickListener(v -> {
+                                Intent p = new Intent(TeacherTask.this, PreviewActivity.class);
+                                p.putExtra(PreviewActivity.EXTRA_URL, finalFurlImg);
+                                p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, finalFnameImg);
+                                startActivity(p);
+                            });
+
+                            filesContainer.addView(fileRow);
+
+                        } else {
+                            // NON-IMAGE: pill-style row (PPT/PDF/DOC/VIDEO/ZIP/OTHER)
+                            LinearLayout fileRow = new LinearLayout(this);
+                            fileRow.setOrientation(LinearLayout.HORIZONTAL);
+                            fileRow.setGravity(Gravity.CENTER_VERTICAL);
+                            fileRow.setPadding(20, 18, 20, 18);
+                            LinearLayout.LayoutParams fileRowParams = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT);
+                            fileRowParams.setMargins(0, 8, 0, 8);
+                            fileRow.setLayoutParams(fileRowParams);
+                            fileRow.setBackgroundResource(R.drawable.gc_file_bg);
+
+                            // Icon (bigger to match pill style)
+                            ImageView fileIcon = new ImageView(this);
+                            fileIcon.setImageResource(getFileIcon(ext));
+                            int iconSize = dpToPx(42);
+                            LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(iconSize, iconSize);
+                            iconLp.setMargins(0, 0, dpToPx(14), 0);
+                            fileIcon.setLayoutParams(iconLp);
+
+                            // Color-code icons (PDF red, PPT orange, DOC blue, VIDEO purple, default teal)
+                            int tintColor = ContextCompat.getColor(this, R.color.teal_700);
+                            switch (ext) {
+                                case "pdf": tintColor = Color.parseColor("#D32F2F"); break;
+                                case "ppt": case "pptx": tintColor = Color.parseColor("#EF6C00"); break;
+                                case "doc": case "docx": tintColor = Color.parseColor("#1976D2"); break;
+                                case "mp4": case "mov": case "mkv": tintColor = Color.parseColor("#6A1B9A"); break;
+                                default: tintColor = ContextCompat.getColor(this, R.color.teal_700); break;
+                            }
+                            fileIcon.setColorFilter(tintColor);
+
+                            // Filename text
+                            TextView fileNameView = new TextView(this);
+                            fileNameView.setText(fname);
+                            fileNameView.setTextSize(15f);
+                            fileNameView.setTextColor(Color.WHITE);
+                            fileNameView.setMaxLines(1);
+                            fileNameView.setEllipsize(TextUtils.TruncateAt.END);
+                            LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(
+                                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                            fileNameView.setLayoutParams(nameLp);
+
+                            // Optional size / ext label (small)
+                            TextView extLabel = new TextView(this);
+                            extLabel.setText(ext.toUpperCase());
+                            extLabel.setTextSize(12f);
+                            extLabel.setTextColor(Color.parseColor("#BDBDBD"));
+                            LinearLayout.LayoutParams extLp = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                            extLp.setMargins(dpToPx(8), 0, 0, 0);
+                            extLabel.setLayoutParams(extLp);
+
+                            fileRow.addView(fileIcon);
+                            fileRow.addView(fileNameView);
+                            fileRow.addView(extLabel);
+
+                            // Whole row clickable -> open preview
+                            final String finalFurl = furl;
+                            final String finalFname = fname;
+                            fileRow.setOnClickListener(v -> {
+                                Intent p = new Intent(TeacherTask.this, PreviewActivity.class);
+                                p.putExtra(PreviewActivity.EXTRA_URL, finalFurl);
+                                p.putExtra(PreviewActivity.EXTRA_DISPLAY_NAME, finalFname);
+                                startActivity(p);
+                            });
+
+                            filesContainer.addView(fileRow);
+                        }
                     }
                 });
 
@@ -429,30 +733,97 @@ public class TeacherTask extends AppCompatActivity {
         return card;
     }
 
-    // small helpers and comment UI (full inline comments implementation)
-    private CardView createModernCard() {
-        CardView card = new CardView(this);
-        card.setCardElevation(10f);
-        card.setRadius(24f);
+    // ============ HELPER METHODS ============
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
+    private String getFileExtension(String fileName) {
+        if (fileName == null) return "";
+        int idx = fileName.lastIndexOf('.');
+        return idx > 0 ? fileName.substring(idx + 1) : "";
+    }
+
+    private boolean isImageFile(String ext) {
+        return ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png")
+                || ext.equals("gif") || ext.equals("webp") || ext.equals("bmp") || ext.equals("heic");
+    }
+
+    private int getFileIcon(String ext) {
+        switch (ext.toLowerCase()) {
+            case "pdf": return R.drawable.ic_pdf;
+            case "doc":
+            case "docx": return R.drawable.ic_doc;
+            case "xls":
+            case "xlsx": return R.drawable.ic_xls;
+            case "ppt":
+            case "pptx": return R.drawable.ic_ppt;
+            case "txt": return R.drawable.ic_txt;
+            case "zip":
+            case "rar": return R.drawable.ic_zip;
+            case "mp4":
+            case "mov":
+            case "mkv":
+            case "3gp":
+            case "webm": return R.drawable.ic_video;
+            default: return R.drawable.ic_file;
+        }
+    }
+
+    private MaterialCardView createModernCard() {
+        MaterialCardView card = new MaterialCardView(this);
+
+        card.setCardElevation(12f);
+        card.setRadius(22f);
         card.setUseCompatPadding(true);
-        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.white));
+
+        // Dark Jungle Background
+        card.setCardBackgroundColor(Color.parseColor("#0D120D"));
+
+        // Border
+        card.setStrokeWidth(3);
+        card.setStrokeColor(Color.parseColor("#1F3926"));
+
+        // Ripple
+        card.setForeground(ContextCompat.getDrawable(this, R.drawable.ripple_card_bg_dark));
+
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMargins(0, 0, 0, 40);
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, 0, 0, 35);
         card.setLayoutParams(params);
-        card.setClickable(true);
-        card.setFocusable(true);
-        card.setForeground(ContextCompat.getDrawable(this, R.drawable.ripple_card_bg));
+
         return card;
     }
 
-    private TextView createTextView(String text, float size, boolean bold) {
+    private TextView createTextView(String t, float size, boolean bold) {
         TextView tv = new TextView(this);
-        tv.setText(text != null ? text : "");
+        tv.setText(t != null ? t : "");
         tv.setTextSize(size);
         if (bold) tv.setTypeface(null, android.graphics.Typeface.BOLD);
-        tv.setTextColor(ContextCompat.getColor(this, R.color.black));
+
+        // BRIGHT text for dark jungle cards
+        tv.setTextColor(Color.parseColor("#E8FFE8"));
+
         return tv;
+    }
+
+    private void lockUI() {
+        blockerOverlay.setVisibility(View.VISIBLE);
+        loadingSpinner.setVisibility(View.VISIBLE);
+        getWindow().setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        );
+    }
+
+    private void unlockUI() {
+        blockerOverlay.setVisibility(View.GONE);
+        loadingSpinner.setVisibility(View.GONE);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
     }
 
     private void addInlineCommentSection(LinearLayout parent, String announcementId) {

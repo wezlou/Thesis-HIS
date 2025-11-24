@@ -3,24 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg">
+    android:background="#0A0F0A">
 
-    <!-- Top Bar -->
+    <!-- TOP BAR -->
     <LinearLayout
         android:id="@+id/topBarTeacher"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:orientation="horizontal"
-        android:background="@color/primary"
+        android:background="#101510"
         android:gravity="center_vertical"
-        android:padding="12dp">
+        android:padding="12dp"
+        android:elevation="6dp">
 
         <ImageView
             android:id="@+id/backToTeacherSite"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/baseline_arrow_circle_left_24"
-            app:tint="@android:color/white" />
+            app:tint="#FFFFFF" />
 
         <TextView
             android:id="@+id/teacherTitle"
@@ -28,20 +29,20 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Teacher Announcements"
-            android:textColor="@android:color/white"
+            android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:gravity="center" />
 
-        <!-- Create New Announcement -->
         <ImageView
             android:id="@+id/createAnnouncementBtn"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_add"
-            app:tint="@android:color/white" />
+            app:tint="#FFFFFF" />
+
     </LinearLayout>
 
-    <!-- Announcement List (default visible) -->
+    <!-- ANNOUNCEMENT LIST -->
     <ScrollView
         android:id="@+id/announcementScroll"
         android:layout_width="match_parent"
@@ -57,18 +58,18 @@
             android:orientation="vertical" />
     </ScrollView>
 
-    <!-- Empty Message -->
+    <!-- EMPTY MESSAGE -->
     <TextView
         android:id="@+id/emptyMessageTeacher"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="No announcements yet 📭"
         android:textSize="16sp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="#666"
         android:layout_centerInParent="true"
         android:visibility="gone" />
 
-    <!-- CREATE ANNOUNCEMENT FORM (HIDDEN BY DEFAULT) -->
+    <!-- CREATE ANNOUNCEMENT FORM -->
     <ScrollView
         android:id="@+id/formSection"
         android:visibility="gone"
@@ -82,57 +83,132 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- TITLE -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Create Announcement"
                 android:textSize="24sp"
                 android:textStyle="bold"
+                android:textColor="#E0E0E0"
                 android:paddingBottom="12dp" />
 
+            <!-- TITLE INPUT -->
             <EditText
                 android:id="@+id/announcementTitleInput"
                 android:hint="Title"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:padding="10dp"
-                android:background="@drawable/edittext_background" />
+                android:padding="12dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#6A6A6A"
+                android:background="@drawable/edittext_dark" />
 
+            <!-- CONTENT INPUT -->
             <EditText
                 android:id="@+id/announcementContentInput"
                 android:hint="Enter announcement..."
                 android:layout_width="match_parent"
                 android:layout_height="150dp"
-                android:padding="10dp"
-                android:background="@drawable/edittext_background"
-                android:layout_marginTop="12dp"
-                android:gravity="top" />
+                android:padding="12dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#6A6A6A"
+                android:gravity="top"
+                android:background="@drawable/edittext_dark"
+                android:layout_marginTop="12dp" />
 
+            <!-- ATTACH FILES SECTION -->
             <LinearLayout
-                android:id="@+id/uploadedFilesContainer"
-                android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" />
-
-            <Button
-                android:id="@+id/uploadBtn"
-                android:text="Upload File"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:orientation="vertical"
                 android:layout_marginTop="20dp"
-                android:background="@drawable/button_primary"
-                android:textColor="@color/white" />
+                android:background="@drawable/card_dark_jungle"
+                android:padding="18dp">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Attach Files"
+                    android:textSize="16sp"
+                    android:textColor="#C7FFC7"
+                    android:paddingBottom="12dp" />
+
+                <!-- UPLOAD BOX -->
+                <LinearLayout
+                    android:id="@+id/uploadContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/upload_button_dark"
+                    android:padding="22dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/uploadBtn"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_upload"
+                        app:tint="#7FAF7F" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Tap to upload files"
+                        android:textSize="14sp"
+                        android:textColor="#9ABF9A" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Attached Files"
+                    android:textSize="15sp"
+                    android:textColor="#C7FFC7"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="8dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#1F3926" />
+
+                <LinearLayout
+                    android:id="@+id/uploadedFilesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="6dp" />
+            </LinearLayout>
+
+            <!-- POST BUTTON -->
             <Button
                 android:id="@+id/postAnnouncementBtn"
-                android:text="Post Announcement"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/button_primary"
-                android:textColor="@color/white" />
+                android:layout_height="50dp"
+                android:text="Post Announcement"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/button_green_glow" />
         </LinearLayout>
     </ScrollView>
+
+    <View
+        android:id="@+id/blockerOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/loadingSpinner"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
 
 </RelativeLayout>
