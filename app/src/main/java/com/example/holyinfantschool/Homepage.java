@@ -11,6 +11,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 
 public class Homepage extends AppCompatActivity {
 
@@ -129,6 +132,7 @@ public class Homepage extends AppCompatActivity {
                     String collection = isStudentLogin ? "students" : "faculty";
 
                     // 🔥 Query Firestore using email instead of UID
+                    // 🔥 Query Firestore using email instead of UID
                     firestore.collection(collection)
                             .whereEqualTo("email", email)
                             .limit(1)
@@ -138,7 +142,6 @@ public class Homepage extends AppCompatActivity {
                                 showLoading(false);
 
                                 if (query.isEmpty()) {
-                                    // No record in that collection
                                     Toast.makeText(this,
                                             isStudentLogin ?
                                                     "This account is not registered as a student." :
@@ -149,7 +152,36 @@ public class Homepage extends AppCompatActivity {
                                     return;
                                 }
 
-                                // 🔥 Correct user → login success
+                                // 🔥 Extract Firestore document
+                                DocumentSnapshot doc = query.getDocuments().get(0);
+
+                                boolean isArchived = doc.getBoolean("is_archived") != null &&
+                                        doc.getBoolean("is_archived");
+
+                                boolean isActive = doc.getBoolean("is_active") == null ||
+                                        doc.getBoolean("is_active");
+
+                                // 🚫 Block login if archived
+                                if (isArchived) {
+                                    Toast.makeText(this,
+                                            "Your account has been archived. Please contact the administrator.",
+                                            Toast.LENGTH_LONG).show();
+
+                                    firebaseAuth.signOut();
+                                    return;
+                                }
+
+                                // 🚫 Block login if not active
+                                if (!isActive) {
+                                    Toast.makeText(this,
+                                            "Your account is not active. Please contact the administrator.",
+                                            Toast.LENGTH_LONG).show();
+
+                                    firebaseAuth.signOut();
+                                    return;
+                                }
+
+                                // 🔥 Login success → account is valid
                                 if (isStudentLogin) {
                                     startActivity(new Intent(this, Categorypage.class));
                                     Toast.makeText(this, "Welcome Student!", Toast.LENGTH_SHORT).show();
