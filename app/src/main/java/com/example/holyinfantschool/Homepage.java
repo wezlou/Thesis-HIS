@@ -155,11 +155,11 @@ public class Homepage extends AppCompatActivity {
                                 // 🔥 Extract Firestore document
                                 DocumentSnapshot doc = query.getDocuments().get(0);
 
-                                boolean isArchived = doc.getBoolean("is_archived") != null &&
-                                        doc.getBoolean("is_archived");
+                                boolean isArchived = doc.getBoolean("isArchived") != null &&
+                                        doc.getBoolean("isArchived");
 
-                                boolean isActive = doc.getBoolean("is_active") == null ||
-                                        doc.getBoolean("is_active");
+                                boolean isActive = doc.getBoolean("isActive") == null ||
+                                        doc.getBoolean("isActive");
 
                                 // 🚫 Block login if archived
                                 if (isArchived) {
