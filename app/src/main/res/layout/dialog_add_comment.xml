@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_comment_dialog"
+    android:background="@color/forestBackground"
     android:orientation="vertical"
     android:padding="20dp">
 
@@ -14,7 +14,7 @@
         android:text="Task Title"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@color/primary"
+        android:textColor="@color/forestPrimaryDark"
         android:gravity="center_horizontal"
         android:layout_marginBottom="12dp" />
 
@@ -39,14 +39,14 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginVertical="10dp"
-        android:background="@color/gray_light" />
+        android:background="@color/forestPrimaryDark" />
 
     <!-- Comment input area -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@drawable/bg_comment_input"
+        android:background="@drawable/input_rounded"
         android:padding="10dp"
         android:gravity="center_vertical">
 
@@ -59,15 +59,17 @@
             android:textSize="15sp"
             android:background="@android:color/transparent"
             android:padding="6dp"
-            android:maxLines="3" />
+            android:maxLines="3"
+            android:textColor="@color/forestText"
+            android:textColorHint="@color/forestMuted"/>
 
         <Button
             android:id="@+id/sendCommentButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Send"
-            android:backgroundTint="@color/primary"
-            android:textColor="@android:color/white"
+            android:background="@drawable/btn_forest"
+            android:textColor="@color/forestCard"
             android:minHeight="0dp"
             android:paddingHorizontal="16dp"
             android:paddingVertical="8dp"

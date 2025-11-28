@@ -4,13 +4,13 @@
     android:id="@+id/previewContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000">
+    android:background="@color/forestBackground">
 
-    <!-- ================== ALWAYS ON TOP BAR ================== -->
+    <!-- TOP BAR -->
     <LinearLayout
         android:id="@+id/topBar"
         android:orientation="horizontal"
-        android:padding="16dp"
+        android:padding="12dp"
         android:gravity="center_vertical"
         android:background="#66000000"
         android:elevation="20dp"
@@ -24,27 +24,23 @@
             android:layout_height="44dp"
             android:background="@android:color/transparent"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            app:tint="#FFFFFF" />
+            app:tint="@color/forestCard" />
 
         <TextView
             android:id="@+id/previewTitle"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/forestCard"
             android:textSize="16sp"
             android:layout_marginStart="12dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>
 
-
-    <!-- ================== LOADING SPINNER ================== -->
     <ProgressBar
         android:id="@+id/previewProgress"
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:layout_gravity="center" />
 
-
-    <!-- ================== IMAGE PREVIEW ================== -->
     <FrameLayout
         android:id="@+id/imageContainer"
         android:visibility="gone"
@@ -58,8 +54,6 @@
             android:scaleType="fitCenter" />
     </FrameLayout>
 
-
-    <!-- ================== DOCUMENT PREVIEW ================== -->
     <FrameLayout
         android:id="@+id/docContainer"
         android:visibility="gone"
@@ -72,8 +66,6 @@
             android:layout_height="match_parent" />
     </FrameLayout>
 
-
-    <!-- ================== VIDEO PREVIEW ================== -->
     <FrameLayout
         android:id="@+id/videoContainer"
         android:visibility="gone"
@@ -84,11 +76,10 @@
             android:id="@+id/exoPlayerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#000"
+            android:background="@color/forestBackground"
             app:use_controller="false"
             android:keepScreenOn="true" />
 
-        <!-- CUSTOM CONTROLS -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -101,7 +92,7 @@
                 android:layout_gravity="center"
                 android:background="@android:color/transparent"
                 android:src="@android:drawable/ic_media_play"
-                app:tint="#FFFFFF" />
+                app:tint="@color/forestCard" />
 
             <SeekBar
                 android:id="@+id/previewSeekBar"

@@ -4,23 +4,23 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:paddingVertical="10dp"
-    android:paddingHorizontal="8dp"
+    android:paddingHorizontal="12dp"
     android:gravity="top">
 
-    <!-- Profile Avatar -->
+    <!-- Avatar -->
     <LinearLayout
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:background="@drawable/bg_avatar_circle"
         android:gravity="center"
-        android:layout_marginEnd="10dp">
+        android:layout_marginEnd="12dp">
 
         <TextView
             android:id="@+id/commentUserInitial"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="A"
-            android:textColor="@android:color/white"
+            android:textColor="@color/forestCard"
             android:textStyle="bold"
             android:textSize="18sp" />
     </LinearLayout>
@@ -40,7 +40,7 @@
             android:layout_height="wrap_content"
             android:text="Student Name"
             android:textStyle="bold"
-            android:textColor="@color/primary"
+            android:textColor="@color/forestPrimaryDark"
             android:textSize="15sp" />
 
         <TextView
@@ -48,17 +48,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="This is a sample comment!"
-            android:textColor="#333333"
+            android:textColor="@color/forestText"
             android:textSize="14sp"
-            android:layout_marginTop="2dp" />
+            android:layout_marginTop="4dp" />
 
         <TextView
             android:id="@+id/commentTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Nov 5, 4:20 PM"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="@color/forestMuted"
             android:textSize="11sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="6dp" />
     </LinearLayout>
 </LinearLayout>

@@ -161,7 +161,6 @@ public class Homepage extends AppCompatActivity {
                                 boolean isActive = doc.getBoolean("isActive") == null ||
                                         doc.getBoolean("isActive");
 
-                                // 🚫 Block login if archived
                                 if (isArchived) {
                                     Toast.makeText(this,
                                             "Your account has been archived. Please contact the administrator.",

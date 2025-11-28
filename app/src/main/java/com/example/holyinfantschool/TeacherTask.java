@@ -846,11 +846,11 @@ public class TeacherTask extends AppCompatActivity {
         card.setUseCompatPadding(true);
 
         // Dark Jungle Background
-        card.setCardBackgroundColor(Color.parseColor("#0D120D"));
+        card.setCardBackgroundColor(Color.parseColor("#FFFFFF"));
 
         // Border
         card.setStrokeWidth(3);
-        card.setStrokeColor(Color.parseColor("#1F3926"));
+        card.setStrokeColor(Color.parseColor("#29C36A"));
 
         // Ripple
         card.setForeground(ContextCompat.getDrawable(this, R.drawable.ripple_card_bg_dark));
@@ -871,8 +871,7 @@ public class TeacherTask extends AppCompatActivity {
         tv.setTextSize(size);
         if (bold) tv.setTypeface(null, android.graphics.Typeface.BOLD);
 
-        // BRIGHT text for dark jungle cards
-        tv.setTextColor(Color.parseColor("#E8FFE8"));
+        tv.setTextColor(Color.parseColor("#054A2C"));
 
         return tv;
     }
