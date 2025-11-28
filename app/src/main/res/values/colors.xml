@@ -54,5 +54,14 @@
     <color name="bananaYellow">#FFE135</color>
     <color name="brownColor">#8B4513</color>
 
+    <color name="forestPrimary">#29C36A</color>
+    <color name="forestPrimaryDark">#1F9D52</color>
+    <color name="forestBackground">#DFFFF0</color>
+    <color name="forestCard">#FFFFFF</color>
+    <color name="forestAccent">#7EE5A2</color>
+    <color name="forestText">#054A2C</color>
+    <color name="forestBorder">#29C36A</color>
+    <color name="forestMuted">#7D8C85</color>
+    <color name="forestShadow">#20054A2C</color>
 
 </resources>

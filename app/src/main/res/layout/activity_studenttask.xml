@@ -3,25 +3,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg">
+    android:background="@color/forestBackground"
+    android:fitsSystemWindows="true">
 
     <!-- Top App Bar -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/primary"
+        android:layout_height="64dp"
+        android:background="@color/forestPrimary"
         android:elevation="6dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="12dp">
 
         <ImageView
             android:id="@+id/backbtn"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:src="@drawable/baseline_arrow_circle_left_24"
-            app:tint="@android:color/white" />
+            android:tint="@color/forestCard" />
 
         <TextView
             android:layout_width="0dp"
@@ -29,15 +30,15 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="Student Tasks"
-            android:textColor="@android:color/white"
+            android:textColor="@color/forestCard"
             android:textSize="20sp" />
 
         <ImageView
             android:id="@+id/settingsButton"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:src="@drawable/settingg"
-            app:tint="@android:color/white" />
+            android:tint="@color/forestCard" />
     </LinearLayout>
 
     <!-- Filter Tabs -->
@@ -59,7 +60,9 @@
             <TextView
                 android:id="@+id/filterAll"
                 style="@style/FilterTab"
-                android:text="All" />
+                android:text="All"
+                android:background="@drawable/filter_tab_selected_bg"
+                android:textColor="@color/forestCard"/>
 
             <TextView
                 android:id="@+id/filterText"
@@ -96,7 +99,7 @@
         android:layout_above="@+id/bottomSpacer"
         android:layout_below="@id/filterScroll"
         android:fillViewport="true"
-        android:padding="8dp">
+        android:padding="12dp">
 
         <LinearLayout
             android:id="@+id/assignedTasksContainer"
@@ -114,7 +117,7 @@
         android:layout_centerInParent="true"
         android:gravity="center"
         android:text="No tasks or announcements yet 📭"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/forestMuted"
         android:textSize="16sp"
         android:visibility="gone" />
 
