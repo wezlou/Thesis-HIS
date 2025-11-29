@@ -586,7 +586,7 @@ public class TeacherTask extends AppCompatActivity {
         topRow.setGravity(Gravity.CENTER_VERTICAL);
 
         TextView titleView = createTextView(title, 18f, true);
-        titleView.setTextColor(Color.parseColor("#E8FFE8"));
+        titleView.setTextColor(Color.parseColor("#1F9D52"));
         LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         titleView.setLayoutParams(titleParams);
 
@@ -664,7 +664,7 @@ public class TeacherTask extends AppCompatActivity {
                             TextView fileNameView = new TextView(this);
                             fileNameView.setText(fname);
                             fileNameView.setTextSize(15f);
-                            fileNameView.setTextColor(Color.WHITE);
+                            fileNameView.setTextColor(Color.parseColor("#054A2C"));
                             fileNameView.setMaxLines(1);
                             fileNameView.setEllipsize(TextUtils.TruncateAt.END);
                             LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(
@@ -674,7 +674,7 @@ public class TeacherTask extends AppCompatActivity {
                             TextView extLabel = new TextView(this);
                             extLabel.setText(ext.toUpperCase());
                             extLabel.setTextSize(12f);
-                            extLabel.setTextColor(Color.parseColor("#BDBDBD"));
+                            extLabel.setTextColor(Color.parseColor("#1F9D52"));
                             LinearLayout.LayoutParams extLp = new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                             extLp.setMargins(dpToPx(8), 0, 0, 0);
@@ -728,7 +728,7 @@ public class TeacherTask extends AppCompatActivity {
                             TextView fileNameView = new TextView(this);
                             fileNameView.setText(fname);
                             fileNameView.setTextSize(15f);
-                            fileNameView.setTextColor(Color.WHITE);
+                            fileNameView.setTextColor(Color.parseColor("#054A2C"));
                             fileNameView.setMaxLines(1);
                             fileNameView.setEllipsize(TextUtils.TruncateAt.END);
                             LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(
@@ -789,6 +789,7 @@ public class TeacherTask extends AppCompatActivity {
                                         });
 
                                 Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                                loadAnnouncements();
                             })
                             .addOnFailureListener(e -> Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
                 })
@@ -922,11 +923,12 @@ public class TeacherTask extends AppCompatActivity {
     }
 
     private void addInlineCommentSection(LinearLayout parent, String announcementId) {
-        // Divider line
+
+        // Divider
         View divider = new View(this);
         divider.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 2));
-        divider.setBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
+        divider.setBackgroundColor(Color.parseColor("#D0D0D0"));
         parent.addView(divider);
 
         // Section Header
@@ -934,124 +936,211 @@ public class TeacherTask extends AppCompatActivity {
         commentHeader.setPadding(0, 10, 0, 10);
         parent.addView(commentHeader);
 
-        // Comment List
-        LinearLayout commentList = new LinearLayout(this);
-        commentList.setOrientation(LinearLayout.VERTICAL);
-        commentList.setPadding(16, 8, 16, 8);
-        parent.addView(commentList);
+        // Main container for all comments
+        LinearLayout commentSection = new LinearLayout(this);
+        commentSection.setOrientation(LinearLayout.VERTICAL);
+        commentSection.setPadding(16, 8, 16, 8);
+        parent.addView(commentSection);
 
-        // Comment Input Layout
-        LinearLayout commentInputLayout = new LinearLayout(this);
-        commentInputLayout.setOrientation(LinearLayout.HORIZONTAL);
-        commentInputLayout.setGravity(Gravity.CENTER_VERTICAL);
-        commentInputLayout.setPadding(8, 8, 8, 8);
+        // MAIN COMMENT INPUT BOX
+        addMainCommentInput(parent, announcementId);
 
-        // EditText Input
-        EditText commentInput = new EditText(this);
-        commentInput.setHint("Add a comment...");
-        commentInput.setBackgroundResource(R.drawable.input_rounded);
-        commentInput.setPadding(32, 20, 32, 20);
-        commentInput.setTextSize(14f);
-
-        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        inputParams.setMargins(8, 8, 12, 8);
-        commentInput.setLayoutParams(inputParams);
-        commentInputLayout.addView(commentInput);
-
-        // Send Button (with round background)
-        FrameLayout sendContainer = new FrameLayout(this);
-        LinearLayout.LayoutParams sendParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        sendContainer.setLayoutParams(sendParams);
-
-        ImageButton sendButton = new ImageButton(this);
-        sendButton.setImageResource(R.drawable.ic_send);
-        sendButton.setBackgroundResource(R.drawable.btn_round_send);
-        sendButton.setContentDescription("Send comment");
-        sendContainer.addView(sendButton);
-
-        // Loading Spinner (hidden by default)
-        ProgressBar loadingSpinner = new ProgressBar(this, null, android.R.attr.progressBarStyleSmall);
-        loadingSpinner.setVisibility(View.GONE);
-        loadingSpinner.setIndeterminate(true);
-        sendContainer.addView(loadingSpinner);
-
-        commentInputLayout.addView(sendContainer);
-        parent.addView(commentInputLayout);
-
-        // Listen for comments in Firestore (by announcementId)
+        // Firestore listener for ALL comments (main + replies)
         db.collection("comments")
                 .whereEqualTo("announcementId", announcementId)
                 .orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((value, error) -> {
+
                     if (error != null || value == null) return;
-                    commentList.removeAllViews();
 
-                    for (DocumentSnapshot doc : value) {
-                        String user = doc.getString("user");
-                        String text = doc.getString("text");
+                    commentSection.removeAllViews();
 
-                        // Bubble style
-                        LinearLayout bubble = new LinearLayout(this);
-                        bubble.setOrientation(LinearLayout.VERTICAL);
-                        bubble.setBackgroundResource(R.drawable.comment_bubble_bg);
-                        bubble.setPadding(20, 12, 20, 12);
+                    List<DocumentSnapshot> all = value.getDocuments();
 
-                        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                        lp.setMargins(0, 6, 0, 6);
-                        bubble.setLayoutParams(lp);
+                    // Separate "main" comments
+                    List<DocumentSnapshot> main = new ArrayList<>();
+                    for (DocumentSnapshot d : all) {
+                        String parentId = d.getString("parentId");
+                        if (parentId == null) main.add(d);
+                    }
 
-                        TextView userView = createTextView(user, 13f, true);
-                        userView.setTextColor(ContextCompat.getColor(this, R.color.teal_700));
+                    // Render all main comments
+                    for (DocumentSnapshot mainComment : main) {
 
-                        TextView textView = createTextView(text, 14f, false);
-                        textView.setTextColor(ContextCompat.getColor(this, R.color.black));
+                        // MAIN COMMENT 🔵
+                        LinearLayout mainBubble = buildCommentBubble(
+                                mainComment.getString("user"),
+                                mainComment.getString("text"),
+                                false  // not a reply
+                        );
+                        commentSection.addView(mainBubble);
 
-                        bubble.addView(userView);
-                        bubble.addView(textView);
-                        commentList.addView(bubble);
+                        // "Reply" clickable text
+                        TextView replyBtn = new TextView(this);
+                        replyBtn.setText("Reply");
+                        replyBtn.setTextColor(Color.parseColor("#29C36A"));
+                        replyBtn.setPadding(16, 4, 0, 12);
+                        replyBtn.setTextSize(13f);
+                        commentSection.addView(replyBtn);
+
+                        // Hidden reply input
+                        LinearLayout replyInput = buildReplyInput(mainComment.getId(), announcementId);
+                        replyInput.setVisibility(View.GONE);
+                        commentSection.addView(replyInput);
+
+                        replyBtn.setOnClickListener(v -> {
+                            replyInput.setVisibility(
+                                    replyInput.getVisibility() == View.GONE ? View.VISIBLE : View.GONE
+                            );
+                        });
+
+                        // Find replies for this comment
+                        for (DocumentSnapshot d : all) {
+                            String parentId = d.getString("parentId");
+                            if (parentId != null && parentId.equals(mainComment.getId())) {
+
+                                // REPLY COMMENT 🟢
+                                LinearLayout replyBubble = buildCommentBubble(
+                                        d.getString("user"),
+                                        d.getString("text"),
+                                        true  // reply mode = indented
+                                );
+                                commentSection.addView(replyBubble);
+                            }
+                        }
                     }
                 });
+    }
 
-        // Send Comment Logic
-        sendButton.setOnClickListener(v -> {
-            String commentText = commentInput.getText().toString().trim();
-            if (commentText.isEmpty()) return;
+    private LinearLayout buildCommentBubble(String user, String text, boolean isReply) {
 
-            // Disable send + show loading
-            sendButton.setEnabled(false);
-            sendButton.setAlpha(0.5f);
-            loadingSpinner.setVisibility(View.VISIBLE);
-            sendButton.setVisibility(View.INVISIBLE);
+        LinearLayout bubble = new LinearLayout(this);
+        bubble.setOrientation(LinearLayout.VERTICAL);
 
-            FirebaseUser currentUser = auth.getCurrentUser();
-            String user = (currentUser != null && currentUser.getEmail() != null)
-                    ? currentUser.getEmail()
-                    : "Anonymous";
+        if (isReply) {
+            bubble.setBackgroundResource(R.drawable.comment_reply_bubble);
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(dpToPx(40), dpToPx(4), dpToPx(4), dpToPx(4));  // INDENT
+            bubble.setLayoutParams(params);
+        } else {
+            bubble.setBackgroundResource(R.drawable.comment_bubble_bg);
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));  // No indent
+            bubble.setLayoutParams(params);
+        }
+
+        bubble.setPadding(20, 12, 20, 12);
+
+        TextView userView = createTextView(user, 13f, true);
+        userView.setTextColor(Color.parseColor("#1F9D52"));
+
+        TextView textView = createTextView(text, 14f, false);
+        textView.setTextColor(Color.parseColor("#054A2C"));
+
+        bubble.addView(userView);
+        bubble.addView(textView);
+
+        return bubble;
+    }
+
+    private LinearLayout buildReplyInput(String parentCommentId, String announcementId) {
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setPadding(8, 8, 8, 8);
+
+        EditText input = new EditText(this);
+        input.setHint("Write a reply...");
+        input.setBackgroundResource(R.drawable.input_rounded);
+        input.setPadding(24, 12, 24, 12);
+        input.setTextSize(14f);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+        );
+        lp.setMargins(8, 8, 16, 8);
+        input.setLayoutParams(lp);
+
+        ImageButton send = new ImageButton(this);
+        send.setImageResource(R.drawable.ic_send);
+        send.setBackgroundResource(R.drawable.btn_round_send);
+
+        send.setOnClickListener(v -> {
+            String replyText = input.getText().toString().trim();
+            if (replyText.isEmpty()) return;
+
+            FirebaseUser u = auth.getCurrentUser();
+            String userEmail = (u != null && u.getEmail() != null) ? u.getEmail() : "Anonymous";
 
             Map<String, Object> data = new HashMap<>();
             data.put("announcementId", announcementId);
-            data.put("user", user);
-            data.put("text", commentText);
+            data.put("parentId", parentCommentId);  // This makes it a REPLY
+            data.put("user", userEmail);
+            data.put("text", replyText);
             data.put("timestamp", new Date());
 
-            db.collection("comments").add(data)
-                    .addOnSuccessListener(unused -> {
-                        commentInput.setText("");
-                        Toast.makeText(this, "Comment sent 💬", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to send comment ❌", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnCompleteListener(task -> {
-                        // Re-enable and reset
-                        sendButton.setEnabled(true);
-                        sendButton.setAlpha(1f);
-                        loadingSpinner.setVisibility(View.GONE);
-                        sendButton.setVisibility(View.VISIBLE);
-                    });
+            db.collection("comments").add(data);
+            input.setText("");
         });
+
+        layout.addView(input);
+        layout.addView(send);
+
+        return layout;
     }
+
+    private void addMainCommentInput(LinearLayout parent, String announcementId) {
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setPadding(8, 12, 8, 8);
+
+        EditText input = new EditText(this);
+        input.setHint("Add a comment...");
+        input.setBackgroundResource(R.drawable.input_rounded);
+        input.setPadding(24, 12, 24, 12);
+        input.setTextSize(14f);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+        );
+        lp.setMargins(8, 8, 16, 8);
+        input.setLayoutParams(lp);
+
+        ImageButton send = new ImageButton(this);
+        send.setImageResource(R.drawable.ic_send);
+        send.setBackgroundResource(R.drawable.btn_round_send);
+
+        send.setOnClickListener(v -> {
+            String text = input.getText().toString().trim();
+            if (text.isEmpty()) return;
+
+            FirebaseUser u = auth.getCurrentUser();
+            String email = (u != null && u.getEmail() != null) ? u.getEmail() : "Anonymous";
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("announcementId", announcementId);
+            data.put("parentId", null);  // MAIN COMMENT
+            data.put("user", email);
+            data.put("text", text);
+            data.put("timestamp", new Date());
+
+            db.collection("comments").add(data);
+            input.setText("");
+        });
+
+        layout.addView(input);
+        layout.addView(send);
+
+        parent.addView(layout);
+    }
+
 }
