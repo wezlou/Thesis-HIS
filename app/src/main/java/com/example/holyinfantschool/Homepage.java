@@ -28,16 +28,40 @@ public class Homepage extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private boolean isMusicPlaying = true;
 
-    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_homepage);
 
         firebaseAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
-        // UI BINDING
+        // ⭐ AUTO LOGIN CHECK ⭐
+        if (firebaseAuth.getCurrentUser() != null) {
+
+            String role = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                    .getString("user_role", "");
+
+            if (role.equals("student")) {
+                startActivity(new Intent(this, Categorypage.class));
+                finish();
+                return;
+            }
+
+            if (role.equals("faculty")) {
+                startActivity(new Intent(this, TeacherSite.class));
+                finish();
+                return;
+            }
+        }
+
+        // No active session → show login page
+        setContentView(R.layout.activity_homepage);
+        initUI();
+        setupUI();
+    }
+
+    @SuppressLint("MissingInflatedId")
+    private void initUI() {
         studentLoginBtn = findViewById(R.id.student_login);
         facultyLoginBtn = findViewById(R.id.faculty_login);
         exitBtn = findViewById(R.id.exit);
@@ -67,8 +91,6 @@ public class Homepage extends AppCompatActivity {
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
-
-        setupUI();
     }
 
     private void setupUI() {
@@ -138,7 +160,6 @@ public class Homepage extends AppCompatActivity {
 
                     String collection = isStudentLogin ? "students" : "faculty";
 
-                    // 🔥 Query Firestore USING EMAIL (not UID)
                     firestore.collection(collection)
                             .whereEqualTo("email", email)
                             .limit(1)
@@ -153,12 +174,10 @@ public class Homepage extends AppCompatActivity {
                                                     "This account is not registered as a student." :
                                                     "This account is not registered as a teacher.",
                                             Toast.LENGTH_SHORT).show();
-
                                     firebaseAuth.signOut();
                                     return;
                                 }
 
-                                // --- ACCOUNT VALIDATION ---
                                 DocumentSnapshot doc = query.getDocuments().get(0);
 
                                 boolean isArchived = doc.getBoolean("isArchived") != null &&
@@ -168,30 +187,23 @@ public class Homepage extends AppCompatActivity {
                                         doc.getBoolean("isActive");
 
                                 if (isArchived) {
-                                    Toast.makeText(this,
-                                            "Your account is archived.",
-                                            Toast.LENGTH_LONG).show();
-
+                                    Toast.makeText(this, "Your account is archived.", Toast.LENGTH_LONG).show();
                                     firebaseAuth.signOut();
                                     return;
                                 }
 
                                 if (!isActive) {
-                                    Toast.makeText(this,
-                                            "Your account is not active.",
-                                            Toast.LENGTH_LONG).show();
-
+                                    Toast.makeText(this, "Your account is not active.", Toast.LENGTH_LONG).show();
                                     firebaseAuth.signOut();
                                     return;
                                 }
 
-                                // 🔥 SAVE ROLE LOCALLY
+                                // SAVE ROLE LOCALLY
                                 getSharedPreferences("HIS_APP", MODE_PRIVATE)
                                         .edit()
                                         .putString("user_role", isStudentLogin ? "student" : "faculty")
                                         .apply();
 
-                                // --- REDIRECT ---
                                 if (isStudentLogin) {
                                     startActivity(new Intent(this, Categorypage.class));
                                     Toast.makeText(this, "Welcome Student!", Toast.LENGTH_SHORT).show();

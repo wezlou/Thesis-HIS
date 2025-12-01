@@ -6,82 +6,96 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
 
 public class TeacherSite extends AppCompatActivity {
+
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false;
     private FirebaseAuth mAuth;
     private ImageView volumeOn, volumeOff;
-    private boolean settingsVisible = false; // track settings state
+    private boolean settingsVisible = false; // track settings button toggle state
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_teacher_site);
 
-        // Initialize Firebase Auth
+        // Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // Initialize views
+        // Views
         ImageView taskBtn = findViewById(R.id.taskbtn);
-        ImageView backTeacher = findViewById(R.id.backteacher); // now used for logout
+        ImageView backTeacher = findViewById(R.id.backteacher); // now logout button
         ImageView teacherSetting = findViewById(R.id.teachersetting);
         volumeOn = findViewById(R.id.volumeOn);
         volumeOff = findViewById(R.id.volumeOff);
 
-        // Initially hide the volume buttons
         hideSettingsButtons();
 
-        // Initialize media player for background music
+        // Background Music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // Task Button Click
+        // Go to Tasks
         taskBtn.setOnClickListener(v -> {
             startActivity(new Intent(TeacherSite.this, TaskSplash.class));
             finish();
         });
 
-        // BackTeacher acts as Logout Button
+        // LOGOUT BUTTON
         backTeacher.setOnClickListener(v -> {
-            mAuth.signOut();
+
+            // 1. Firebase logout
+            FirebaseAuth.getInstance().signOut();
+
+            // 2. Remove saved role
+            getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                    .edit()
+                    .remove("user_role")
+                    .apply();
+
+            // 3. Stop music
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
                 mediaPlayer = null;
             }
+
+            // 4. Redirect to Homepage
             Intent intent = new Intent(TeacherSite.this, Homepage.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
                     Intent.FLAG_ACTIVITY_NEW_TASK |
                     Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
+
             Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
         });
 
-        // Settings Button Click
+        // Settings toggle
         teacherSetting.setOnClickListener(v -> {
             if (settingsVisible) {
                 hideSettingsButtons();
             } else {
                 showSettingsButtons();
             }
-            settingsVisible = !settingsVisible; // toggle state
+            settingsVisible = !settingsVisible;
         });
 
-        // Volume On Button Click
+        // Volume buttons
         volumeOn.setOnClickListener(v -> {
             mediaPlayer.setVolume(0, 0);
             isMuted = true;
             updateVolumeButtonsVisibility();
         });
 
-        // Volume Off Button Click
         volumeOff.setOnClickListener(v -> {
-            mediaPlayer.setVolume(1.0f, 1.0f);
+            mediaPlayer.setVolume(1, 1);
             isMuted = false;
             updateVolumeButtonsVisibility();
         });
