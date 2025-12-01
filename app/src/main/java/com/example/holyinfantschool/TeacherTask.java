@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -168,7 +169,6 @@ public class TeacherTask extends AppCompatActivity {
         data.put("teacherEmail", teacherEmail);
         data.put("timestamp", new Date());
 
-        // ⭐ Hide keyboard → then show bottom sliding overlay
         hideKeyboard();
         lockUI("Posting announcement...");
 
@@ -203,6 +203,12 @@ public class TeacherTask extends AppCompatActivity {
                     .add(data)
                     .addOnSuccessListener(docRef -> {
                         String announcementId = docRef.getId();
+                        showLocalNotification(
+                                "New Announcement Posted",
+                                title,
+                                docRef.getId()
+                        );
+
                         Toast.makeText(this, "Announcement posted!", Toast.LENGTH_SHORT).show();
 
                         announcementTitleInput.setText("");
@@ -224,6 +230,7 @@ public class TeacherTask extends AppCompatActivity {
                     });
         }
     }
+
     private void uploadFilesForAnnouncementWithNotification(String announcementId) {
 
         // snapshot of entries so we don't mutate while iterating
@@ -479,6 +486,52 @@ public class TeacherTask extends AppCompatActivity {
             }
         }
     }
+
+    private void showLocalNotification(String title, String message, String announcementId) {
+
+        // Create channel
+        NotificationUtils.createChannel(this);
+
+        // Build intent when tapping the notification
+        Intent intent = new Intent(this, studenttask.class);
+        intent.putExtra("open_announcement", announcementId);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                announcementId.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NotificationUtils.CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)   // USE YOUR ICON
+                .setContentTitle(title)
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+
+        // 🔥 FIXES YOUR ERROR: Permission check
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Ask permission (Android 13+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        2000
+                );
+            }
+
+            return;
+        }
+
+        manager.notify(announcementId.hashCode(), builder.build());
+    }
+
 
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
