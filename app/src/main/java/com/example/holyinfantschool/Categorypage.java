@@ -31,32 +31,22 @@ public class Categorypage extends AppCompatActivity {
         volumeOn = findViewById(R.id.volumeOn);
         volumeOff = findViewById(R.id.volumeOff);
 
-        // Hide volume buttons at start
         hideSettingsButtons();
 
-        // Setup music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // Back button → Homepage
         backTeacher.setOnClickListener(v -> {
             stopMusic();
-
-            // 🔹 Log out user from Firebase
             FirebaseAuth.getInstance().signOut();
 
-            // 🔹 Go back to Homepage (login)
             Intent intent = new Intent(Categorypage.this, Homepage.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-
-            // 🔹 Finish current activity
             finish();
         });
 
-
-        // Settings button
         teacherSetting.setOnClickListener(v -> {
             if (settingsVisible) {
                 hideSettingsButtons();
@@ -66,21 +56,18 @@ public class Categorypage extends AppCompatActivity {
             settingsVisible = !settingsVisible;
         });
 
-        // Volume On → mute
         volumeOn.setOnClickListener(v -> {
             mediaPlayer.setVolume(0, 0);
             isMuted = true;
             updateVolumeButtonsVisibility();
         });
 
-        // Volume Off → unmute
         volumeOff.setOnClickListener(v -> {
             mediaPlayer.setVolume(1.0f, 1.0f);
             isMuted = false;
             updateVolumeButtonsVisibility();
         });
 
-        // --- Other functions ---
         watchVideos.setOnClickListener(v -> {
             stopMusic();
             startActivity(new Intent(Categorypage.this, VideosActivity.class));

@@ -1,17 +1,27 @@
 package com.example.holyinfantschool;
 
+import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import com.google.android.material.card.MaterialCardView;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -33,6 +43,10 @@ public class studenttask extends AppCompatActivity {
     private ImageView backButton, settingsButton;
     private boolean isMuted = false;
     private MediaPlayer mediaPlayer;
+    private Map<String, Integer> lastCommentCounts = new HashMap<>();
+    private long lastAnnouncementTimestamp = 0;
+    private long lastCommentTimestamp = 0;
+    private Handler pollingHandler = new Handler();
 
     private static final SimpleDateFormat DATE_FORMAT =
             new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault());
@@ -42,6 +56,13 @@ public class studenttask extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        String openId = getIntent().getStringExtra("open_announcement");
+        if (openId != null) {
+            scrollToAnnouncement(openId);
+        }
+        startAnnouncementPolling();
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_studenttask);
 
@@ -215,6 +236,7 @@ public class studenttask extends AppCompatActivity {
 
     private void addAnnouncementItem(String announcementId, String teacherEmail, String title, String content, Date timestamp) {
         CardView card = createModernCard();
+        card.setTag(announcementId);
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -230,10 +252,6 @@ public class studenttask extends AppCompatActivity {
         layout.addView(t2);
         layout.addView(t3);
         layout.addView(t4);
-
-        // ============================================
-        // 🔥 STUDENT FILE PREVIEW (COPY OF TEACHER LOGIC)
-        // ============================================
 
         LinearLayout filesContainer = new LinearLayout(this);
         filesContainer.setOrientation(LinearLayout.VERTICAL);
@@ -293,6 +311,51 @@ public class studenttask extends AppCompatActivity {
         card.addView(layout);
         assignedTasksContainer.addView(card);
     }
+
+    private void showLocalNotification(String title, String message, String announcementId) {
+        String CHANNEL_ID = "local_channel";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Local Alerts",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+        }
+
+        Intent intent = new Intent(this, studenttask.class);
+        intent.putExtra("announcementId", announcementId);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Request permission if missing
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    101
+            );
+            return;
+        }
+
+        NotificationManagerCompat.from(this).notify((int)System.currentTimeMillis(), builder.build());
+    }
+
 
     private void addTaskItem(String displayName, String fileUrl, Date timestamp) {
         CardView card = createModernCard();
@@ -378,6 +441,45 @@ public class studenttask extends AppCompatActivity {
 
                     if (error != null || value == null) return;
 
+                    // =====================================================
+                    // ⚡ AUTO-DETECT NEW COMMENTS OR NEW REPLIES
+                    // =====================================================
+                    int currentCount = value.size();
+                    int previousCount = lastCommentCounts.getOrDefault(idForComments, 0);
+
+                    if (previousCount != 0 && currentCount > previousCount) {
+
+                        // Get latest comment
+                        DocumentSnapshot latest = value.getDocuments()
+                                .get(value.size() - 1);
+
+                        String user = latest.getString("user");
+                        String text = latest.getString("text");
+                        String parentId = latest.getString("parentId");
+
+                        if (parentId == null) {
+                            // MAIN COMMENT
+                            showLocalNotification(
+                                    "New Comment",
+                                    user + ": " + text,
+                                    idForComments
+                            );
+                        } else {
+                            // REPLY
+                            showLocalNotification(
+                                    "New Reply",
+                                    user + " replied: " + text,
+                                    idForComments
+                            );
+                        }
+                    }
+
+                    // Save new count
+                    lastCommentCounts.put(idForComments, currentCount);
+
+                    // =====================================================
+                    // 🔥 NORMAL RENDERING OF COMMENTS BELOW
+                    // =====================================================
                     commentSection.removeAllViews();
                     List<DocumentSnapshot> all = value.getDocuments();
 
@@ -390,7 +492,7 @@ public class studenttask extends AppCompatActivity {
 
                     for (DocumentSnapshot main : mainComments) {
 
-                        // MAIN BUBBLE
+                        // MAIN COMMENT BUBBLE
                         LinearLayout mainBubble = buildCommentBubble_student(
                                 main.getString("user"),
                                 main.getString("text"),
@@ -406,7 +508,7 @@ public class studenttask extends AppCompatActivity {
                         replyBtn.setTextSize(13f);
                         commentSection.addView(replyBtn);
 
-                        // REPLY INPUT
+                        // REPLY INPUT AREA
                         LinearLayout replyInput = buildReplyInput_student(main.getId(), idForComments);
                         replyInput.setVisibility(View.GONE);
                         commentSection.addView(replyInput);
@@ -417,7 +519,7 @@ public class studenttask extends AppCompatActivity {
                             );
                         });
 
-                        // LIST REPLIES
+                        // REPLIES
                         for (DocumentSnapshot replyDoc : all) {
                             String parentId = replyDoc.getString("parentId");
 
@@ -512,6 +614,12 @@ public class studenttask extends AppCompatActivity {
             data.put("timestamp", new Date());
 
             db.collection("comments").add(data);
+            showLocalNotification(
+                    "New Reply",
+                    userEmail + " replied: " + replyText,
+                    announcementId
+            );
+
             input.setText("");
         });
 
@@ -559,6 +667,12 @@ public class studenttask extends AppCompatActivity {
             data.put("timestamp", new Date());
 
             db.collection("comments").add(data);
+            showLocalNotification(
+                    "New Comment",
+                    userEmail + ": " + text,
+                    announcementId
+            );
+
             input.setText("");
         });
 
@@ -571,6 +685,64 @@ public class studenttask extends AppCompatActivity {
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
+    }
+
+    private void startAnnouncementPolling() {
+        pollingHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                // 🔥 Check for new announcements
+                db.collection("announcements")
+                        .orderBy("timestamp", Query.Direction.DESCENDING)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener(query -> {
+                            if (!query.isEmpty()) {
+                                DocumentSnapshot latest = query.getDocuments().get(0);
+                                Date ts = latest.getDate("timestamp");
+
+                                if (ts != null && ts.getTime() > lastAnnouncementTimestamp) {
+                                    lastAnnouncementTimestamp = ts.getTime();
+
+                                    showLocalNotification(
+                                            "New Announcement",
+                                            latest.getString("title"),
+                                            latest.getId()
+                                    );
+                                }
+                            }
+                        });
+
+                // 🔥 Check for new comments
+                db.collection("comments")
+                        .orderBy("timestamp", Query.Direction.DESCENDING)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener(query -> {
+                            if (!query.isEmpty()) {
+                                DocumentSnapshot latest = query.getDocuments().get(0);
+                                Date ts = latest.getDate("timestamp");
+
+                                if (ts != null && ts.getTime() > lastCommentTimestamp) {
+                                    lastCommentTimestamp = ts.getTime();
+
+                                    String user = latest.getString("user");
+                                    String text = latest.getString("text");
+
+                                    showLocalNotification(
+                                            "New Comment",
+                                            user + ": " + text,
+                                            latest.getString("announcementId")
+                                    );
+                                }
+                            }
+                        });
+
+                // Repeat every 10 seconds
+                pollingHandler.postDelayed(this, 10000);
+            }
+        }, 1000);
     }
 
     private MaterialCardView createModernCard() {
@@ -638,6 +810,20 @@ public class studenttask extends AppCompatActivity {
         return false;
     }
 
+    private void scrollToAnnouncement(String announcementId) {
+        assignedTasksContainer.post(() -> {
+            for (int i = 0; i < assignedTasksContainer.getChildCount(); i++) {
+                View card = assignedTasksContainer.getChildAt(i);
+                if (card.getTag() != null && card.getTag().equals(announcementId)) {
+                    card.requestFocus();
+                    assignedTasksContainer.scrollTo(0, card.getTop());
+                    break;
+                }
+            }
+        });
+    }
+
+
     private void highlightSelected(TextView s) {
         filterAll.setBackgroundResource(R.drawable.filter_tab_bg);
         filterText.setBackgroundResource(R.drawable.filter_tab_bg);
@@ -648,4 +834,11 @@ public class studenttask extends AppCompatActivity {
 
         s.setBackgroundResource(R.drawable.filter_tab_selected_bg);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        pollingHandler.removeCallbacksAndMessages(null);
+    }
+
 }
