@@ -126,16 +126,50 @@ public class Numberquiz extends AppCompatActivity {
         correctAnswer = 3 + random.nextInt(6);
         questionText.setText("How many " + animalName + " are here?");
 
-        for (int i = 0; i < correctAnswer; i++) {
-            ImageView animal = new ImageView(this);
-            animal.setImageResource(animalRes);
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(200, 200);
-            animal.setLayoutParams(params);
-            animal.setX(random.nextInt(700));
-            animal.setY(random.nextInt(600));
-            animalsLayer.addView(animal);
-        }
+        // ⚡ Spawn after layout is measured
+        animalsLayer.post(() -> {
 
+            animalsLayer.removeAllViews();
+
+            int containerW = animalsLayer.getWidth();
+            int containerH = animalsLayer.getHeight();
+
+            if (containerW == 0 || containerH == 0) {
+                containerW = 800;
+                containerH = 800;
+            }
+
+            int animalSize = 200;
+
+            // Center spawn logic
+            int centerW = containerW / 2;
+            int centerH = containerH / 2;
+
+            int spreadX = containerW / 4;  // controlled random movement
+            int spreadY = containerH / 4;
+
+            for (int i = 0; i < correctAnswer; i++) {
+
+                int x = centerW + random.nextInt(spreadX) - spreadX / 2;
+                int y = centerH + random.nextInt(spreadY) - spreadY / 2;
+
+                // Clamp to screen
+                x = Math.max(0, Math.min(x, containerW - animalSize));
+                y = Math.max(0, Math.min(y, containerH - animalSize));
+
+                ImageView animal = new ImageView(this);
+                animal.setImageResource(animalRes);
+                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(animalSize, animalSize);
+                animal.setLayoutParams(params);
+                animal.setX(x);
+                animal.setY(y);
+
+                animalsLayer.addView(animal);
+            }
+
+        });
+
+        // OPTIONS
         List<Integer> options = new ArrayList<>();
         options.add(correctAnswer);
         while (options.size() < 3) {
@@ -170,25 +204,25 @@ public class Numberquiz extends AppCompatActivity {
         feedbackOverlay.setVisibility(FrameLayout.VISIBLE);
         feedbackOverlay.bringToFront();
 
-        // 🎵 Play sound
+        // 🎵 Sound
         if (!isMuted) {
             if (isCorrect && correctSound != null) correctSound.start();
             else if (!isCorrect && incorrectSound != null) incorrectSound.start();
         }
 
-        // 🌈 Glow color (green/red)
+        // 🌈 Glow color animation
         int glowColor = isCorrect ? Color.parseColor("#AA00FF00") : Color.parseColor("#AAFF0000");
 
         GradientDrawable gradient = new GradientDrawable();
         gradient.setShape(GradientDrawable.RECTANGLE);
         gradient.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        gradient.setGradientCenter(0.5f, 0.5f); // center of screen
+        gradient.setGradientCenter(0.5f, 0.5f);
         gradient.setColors(new int[]{glowColor, Color.TRANSPARENT});
         feedbackOverlay.setBackground(gradient);
 
         ValueAnimator animator = ValueAnimator.ofFloat(1.5f, 0f);
         animator.setDuration(1200);
-        animator.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        animator.setInterpolator(new AccelerateDecelerateInterpolator());
         animator.addUpdateListener(animation -> {
             float progress = (float) animation.getAnimatedValue();
 
