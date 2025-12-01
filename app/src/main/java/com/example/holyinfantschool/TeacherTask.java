@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -49,6 +50,10 @@ public class TeacherTask extends AppCompatActivity {
     private ImageView uploadBtn;
     private TextView emptyMessage;
 
+    private long lastTeacherCommentTimestamp = 0;
+    private Handler teacherPollingHandler = new Handler();
+
+
     private ConstraintLayout progressOverlay;
     private LinearLayout progressCard;
     private ProgressBar progressBar;
@@ -73,6 +78,7 @@ public class TeacherTask extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        startTeacherPolling();
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 
@@ -390,6 +396,57 @@ public class TeacherTask extends AppCompatActivity {
             NotificationManager nm = getSystemService(NotificationManager.class);
             if (nm != null) nm.createNotificationChannel(channel);
         }
+    }
+
+    private void startTeacherPolling() {
+
+        teacherPollingHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                // 🔥 Check for NEW COMMENTS or REPLIES on this teacher’s announcements
+                db.collection("comments")
+                        .orderBy("timestamp", Query.Direction.DESCENDING)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener(query -> {
+                            if (!query.isEmpty()) {
+
+                                DocumentSnapshot latest = query.getDocuments().get(0);
+                                Date ts = latest.getDate("timestamp");
+
+                                if (ts != null && ts.getTime() > lastTeacherCommentTimestamp) {
+
+                                    lastTeacherCommentTimestamp = ts.getTime();
+
+                                    String user = latest.getString("user");
+                                    String text = latest.getString("text");
+                                    String announcementId = latest.getString("announcementId");
+                                    String parentId = latest.getString("parentId");
+
+                                    if (parentId == null) {
+                                        // MAIN COMMENT
+                                        showLocalNotification(
+                                                "New Comment Received",
+                                                user + ": " + text,
+                                                announcementId
+                                        );
+                                    } else {
+                                        // REPLY
+                                        showLocalNotification(
+                                                "New Reply",
+                                                user + " replied: " + text,
+                                                announcementId
+                                        );
+                                    }
+                                }
+                            }
+                        });
+
+                // Repeat every 10 seconds
+                teacherPollingHandler.postDelayed(this, 10000);
+            }
+        }, 1000);
     }
 
     private void showUploadNotification(String title, int completedFiles, int totalFiles) {
@@ -1194,6 +1251,12 @@ public class TeacherTask extends AppCompatActivity {
         layout.addView(send);
 
         parent.addView(layout);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        teacherPollingHandler.removeCallbacksAndMessages(null);
     }
 
 }

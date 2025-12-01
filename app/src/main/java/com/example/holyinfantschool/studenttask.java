@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -43,7 +44,9 @@ public class studenttask extends AppCompatActivity {
     private boolean isMuted = false;
     private MediaPlayer mediaPlayer;
     private Map<String, Integer> lastCommentCounts = new HashMap<>();
-
+    private long lastAnnouncementTimestamp = 0;
+    private long lastCommentTimestamp = 0;
+    private Handler pollingHandler = new Handler();
 
     private static final SimpleDateFormat DATE_FORMAT =
             new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault());
@@ -57,6 +60,8 @@ public class studenttask extends AppCompatActivity {
         if (openId != null) {
             scrollToAnnouncement(openId);
         }
+        startAnnouncementPolling();
+
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_studenttask);
@@ -682,6 +687,64 @@ public class studenttask extends AppCompatActivity {
         return Math.round(dp * density);
     }
 
+    private void startAnnouncementPolling() {
+        pollingHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                // 🔥 Check for new announcements
+                db.collection("announcements")
+                        .orderBy("timestamp", Query.Direction.DESCENDING)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener(query -> {
+                            if (!query.isEmpty()) {
+                                DocumentSnapshot latest = query.getDocuments().get(0);
+                                Date ts = latest.getDate("timestamp");
+
+                                if (ts != null && ts.getTime() > lastAnnouncementTimestamp) {
+                                    lastAnnouncementTimestamp = ts.getTime();
+
+                                    showLocalNotification(
+                                            "New Announcement",
+                                            latest.getString("title"),
+                                            latest.getId()
+                                    );
+                                }
+                            }
+                        });
+
+                // 🔥 Check for new comments
+                db.collection("comments")
+                        .orderBy("timestamp", Query.Direction.DESCENDING)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener(query -> {
+                            if (!query.isEmpty()) {
+                                DocumentSnapshot latest = query.getDocuments().get(0);
+                                Date ts = latest.getDate("timestamp");
+
+                                if (ts != null && ts.getTime() > lastCommentTimestamp) {
+                                    lastCommentTimestamp = ts.getTime();
+
+                                    String user = latest.getString("user");
+                                    String text = latest.getString("text");
+
+                                    showLocalNotification(
+                                            "New Comment",
+                                            user + ": " + text,
+                                            latest.getString("announcementId")
+                                    );
+                                }
+                            }
+                        });
+
+                // Repeat every 10 seconds
+                pollingHandler.postDelayed(this, 10000);
+            }
+        }, 1000);
+    }
+
     private MaterialCardView createModernCard() {
         MaterialCardView card = new MaterialCardView(this);
 
@@ -771,4 +834,11 @@ public class studenttask extends AppCompatActivity {
 
         s.setBackgroundResource(R.drawable.filter_tab_selected_bg);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        pollingHandler.removeCallbacksAndMessages(null);
+    }
+
 }
