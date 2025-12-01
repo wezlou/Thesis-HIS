@@ -56,23 +56,30 @@ public class studenttask extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        String openId = getIntent().getStringExtra("open_announcement");
-        if (openId != null) {
-            scrollToAnnouncement(openId);
-        }
-        startAnnouncementPolling();
-
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_studenttask);
 
         assignedTasksContainer = findViewById(R.id.assignedTasksContainer);
         emptyMessage = findViewById(R.id.emptyMessage);
+        backButton = findViewById(R.id.backbtn);
+        settingsButton = findViewById(R.id.settingsButton);
+
+        filterAll = findViewById(R.id.filterAll);
+        filterText = findViewById(R.id.filterText);
+        filterImages = findViewById(R.id.filterImages);
+        filterVideos = findViewById(R.id.filterVideos);
+        filterPdfs = findViewById(R.id.filterPdfs);
+        filterDocs = findViewById(R.id.filterDocs);
+
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
 
-        backButton = findViewById(R.id.backbtn);
-        settingsButton = findViewById(R.id.settingsButton);
+        String openId = getIntent().getStringExtra("open_announcement");
+        if (openId != null) {
+            new Handler().postDelayed(() -> scrollToAnnouncement(openId), 500);
+        }
+
+        startAnnouncementPolling();
 
         try {
             mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
@@ -88,13 +95,6 @@ public class studenttask extends AppCompatActivity {
         });
 
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
-
-        filterAll = findViewById(R.id.filterAll);
-        filterText = findViewById(R.id.filterText);
-        filterImages = findViewById(R.id.filterImages);
-        filterVideos = findViewById(R.id.filterVideos);
-        filterPdfs = findViewById(R.id.filterPdfs);
-        filterDocs = findViewById(R.id.filterDocs);
 
         highlightSelected(filterAll);
         loadContent("all");
@@ -313,47 +313,43 @@ public class studenttask extends AppCompatActivity {
     }
 
     private void showLocalNotification(String title, String message, String announcementId) {
-        String CHANNEL_ID = "local_channel";
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Local Alerts",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(channel);
+        String role = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("user_role", "");
+
+        Intent intent;
+
+        if ("faculty".equals(role)) {
+            intent = new Intent(this, TeacherTask.class);
+        } else {
+            intent = new Intent(this, studenttask.class);
         }
 
-        Intent intent = new Intent(this, studenttask.class);
-        intent.putExtra("announcementId", announcementId);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        intent.putExtra("open_announcement", announcementId);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 0, intent,
+                this,
+                announcementId.hashCode(),
+                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(title)
-                .setContentText(message)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(this, NotificationUtils.CHANNEL_ID)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentTitle(title)
+                        .setContentText(message)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Request permission if missing
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    101
-            );
-            return;
-        }
+                != PackageManager.PERMISSION_GRANTED) return;
 
-        NotificationManagerCompat.from(this).notify((int)System.currentTimeMillis(), builder.build());
+        NotificationManagerCompat.from(this).notify(
+                announcementId.hashCode(), builder.build()
+        );
     }
 
 
@@ -836,9 +832,46 @@ public class studenttask extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mediaPlayer != null && !isMuted) {
+            try { mediaPlayer.start(); } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mediaPlayer != null) {
+            try { mediaPlayer.stop(); } catch (Exception ignored) {}
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+
         pollingHandler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        boolean openedFromNotif = getIntent().getBooleanExtra("from_notification", false);
+
+        if (openedFromNotif) {
+            // Go back to Homepage cleanly
+            Intent i = new Intent(this, Homepage.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } else {
+            super.onBackPressed();
+        }
     }
 
 }

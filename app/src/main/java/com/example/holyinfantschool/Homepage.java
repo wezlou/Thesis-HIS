@@ -7,13 +7,12 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.*;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
 
 public class Homepage extends AppCompatActivity {
 
@@ -38,9 +37,11 @@ public class Homepage extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
+        // UI BINDING
         studentLoginBtn = findViewById(R.id.student_login);
         facultyLoginBtn = findViewById(R.id.faculty_login);
         exitBtn = findViewById(R.id.exit);
+
         volumeOn = findViewById(R.id.volumeOn);
         volumeOff = findViewById(R.id.volumeOff);
         teacherSetting = findViewById(R.id.teachersetting);
@@ -62,14 +63,20 @@ public class Homepage extends AppCompatActivity {
         closeStudentOverlay = findViewById(R.id.closeStudentOverlay);
         closeFacultyOverlay = findViewById(R.id.closeFacultyOverlay);
 
+        // BACKGROUND MUSIC
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
+        setupUI();
+    }
+
+    private void setupUI() {
+
         teacherSetting.setOnClickListener(v -> {
-            boolean shouldShow = volumeOn.getVisibility() != View.VISIBLE;
-            volumeOn.setVisibility(shouldShow ? View.VISIBLE : View.INVISIBLE);
-            volumeOff.setVisibility(shouldShow ? View.VISIBLE : View.INVISIBLE);
+            boolean show = volumeOn.getVisibility() != View.VISIBLE;
+            volumeOn.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+            volumeOff.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
         });
 
         volumeOn.setOnClickListener(v -> {
@@ -131,8 +138,7 @@ public class Homepage extends AppCompatActivity {
 
                     String collection = isStudentLogin ? "students" : "faculty";
 
-                    // 🔥 Query Firestore using email instead of UID
-                    // 🔥 Query Firestore using email instead of UID
+                    // 🔥 Query Firestore USING EMAIL (not UID)
                     firestore.collection(collection)
                             .whereEqualTo("email", email)
                             .limit(1)
@@ -152,7 +158,7 @@ public class Homepage extends AppCompatActivity {
                                     return;
                                 }
 
-                                // 🔥 Extract Firestore document
+                                // --- ACCOUNT VALIDATION ---
                                 DocumentSnapshot doc = query.getDocuments().get(0);
 
                                 boolean isArchived = doc.getBoolean("isArchived") != null &&
@@ -163,24 +169,29 @@ public class Homepage extends AppCompatActivity {
 
                                 if (isArchived) {
                                     Toast.makeText(this,
-                                            "Your account has been archived. Please contact the administrator.",
+                                            "Your account is archived.",
                                             Toast.LENGTH_LONG).show();
 
                                     firebaseAuth.signOut();
                                     return;
                                 }
 
-                                // 🚫 Block login if not active
                                 if (!isActive) {
                                     Toast.makeText(this,
-                                            "Your account is not active. Please contact the administrator.",
+                                            "Your account is not active.",
                                             Toast.LENGTH_LONG).show();
 
                                     firebaseAuth.signOut();
                                     return;
                                 }
 
-                                // 🔥 Login success → account is valid
+                                // 🔥 SAVE ROLE LOCALLY
+                                getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                                        .edit()
+                                        .putString("user_role", isStudentLogin ? "student" : "faculty")
+                                        .apply();
+
+                                // --- REDIRECT ---
                                 if (isStudentLogin) {
                                     startActivity(new Intent(this, Categorypage.class));
                                     Toast.makeText(this, "Welcome Student!", Toast.LENGTH_SHORT).show();
@@ -193,13 +204,15 @@ public class Homepage extends AppCompatActivity {
                             })
                             .addOnFailureListener(e -> {
                                 showLoading(false);
-                                Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
                             });
 
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
-                    Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,
+                            "Login failed: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 

@@ -78,11 +78,11 @@ public class TeacherTask extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_teacher_task);
+
         startTeacherPolling();
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
-
-        setContentView(R.layout.activity_teacher_task);
 
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
@@ -106,11 +106,10 @@ public class TeacherTask extends AppCompatActivity {
         postAnnouncementBtn = findViewById(R.id.postAnnouncementBtn);
         emptyMessage = findViewById(R.id.emptyMessageTeacher);
 
-        // ⭐ MUST MATCH YOUR NEW XML EXACTLY
-        progressOverlay = findViewById(R.id.progressOverlay);   // ConstraintLayout
-        progressCard = findViewById(R.id.progressCard);         // LinearLayout
-        progressBar = findViewById(R.id.progressBar);           // ProgressBar
-        progressText = findViewById(R.id.progressText);         // TextView
+        progressOverlay = findViewById(R.id.progressOverlay);
+        progressCard = findViewById(R.id.progressCard);
+        progressBar = findViewById(R.id.progressBar);
+        progressText = findViewById(R.id.progressText);
     }
 
     private void setupListeners() {
@@ -546,12 +545,19 @@ public class TeacherTask extends AppCompatActivity {
 
     private void showLocalNotification(String title, String message, String announcementId) {
 
-        // Create channel
-        NotificationUtils.createChannel(this);
+        String role = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("user_role", "");
 
-        // Build intent when tapping the notification
-        Intent intent = new Intent(this, studenttask.class);
+        Intent intent;
+
+        if ("faculty".equals(role)) {
+            intent = new Intent(this, TeacherTask.class);
+        } else {
+            intent = new Intent(this, studenttask.class);
+        }
+
         intent.putExtra("open_announcement", announcementId);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -560,35 +566,22 @@ public class TeacherTask extends AppCompatActivity {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NotificationUtils.CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)   // USE YOUR ICON
-                .setContentTitle(title)
-                .setContentText(message)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(pendingIntent);
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(this, NotificationUtils.CHANNEL_ID)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentTitle(title)
+                        .setContentText(message)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
 
-        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
 
-        // 🔥 FIXES YOUR ERROR: Permission check
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Ask permission (Android 13+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
-                        2000
-                );
-            }
-
-            return;
-        }
-
-        manager.notify(announcementId.hashCode(), builder.build());
+        NotificationManagerCompat.from(this).notify(
+                announcementId.hashCode(), builder.build()
+        );
     }
-
 
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -1258,5 +1251,16 @@ public class TeacherTask extends AppCompatActivity {
         super.onDestroy();
         teacherPollingHandler.removeCallbacksAndMessages(null);
     }
+
+    @Override
+    public void onBackPressed() {
+
+        Intent i = new Intent(this, TeacherSite.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(i);
+
+        super.onBackPressed();
+    }
+
 
 }
