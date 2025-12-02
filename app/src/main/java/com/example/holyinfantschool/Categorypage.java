@@ -11,18 +11,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class Categorypage extends AppCompatActivity {
+
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false;
     private ImageView volumeOn, volumeOff;
-    private boolean settingsVisible = false; // toggle state
+    private boolean settingsVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_categorypage);
 
-        // Initialize views
-        ImageView backTeacher = findViewById(R.id.backteacher);
+        ImageView backTeacher = findViewById(R.id.backteacher); // LOGOUT
         ImageView teacherSetting = findViewById(R.id.teachersetting);
         ImageView watchVideos = findViewById(R.id.watch_videos);
         ImageView readStories = findViewById(R.id.read_stories);
@@ -37,16 +37,32 @@ public class Categorypage extends AppCompatActivity {
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
+        // LOGOUT BUTTON
         backTeacher.setOnClickListener(v -> {
-            stopMusic();
+
+            // 1. Firebase signout
             FirebaseAuth.getInstance().signOut();
 
+            // 2. Remove saved role
+            getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                    .edit()
+                    .remove("user_role")
+                    .apply();
+
+            // 3. Stop music
+            stopMusic();
+
+            // 4. Redirect to homepage
             Intent intent = new Intent(Categorypage.this, Homepage.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                    Intent.FLAG_ACTIVITY_NEW_TASK |
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
             startActivity(intent);
             finish();
         });
 
+        // Settings toggle
         teacherSetting.setOnClickListener(v -> {
             if (settingsVisible) {
                 hideSettingsButtons();
@@ -56,6 +72,7 @@ public class Categorypage extends AppCompatActivity {
             settingsVisible = !settingsVisible;
         });
 
+        // Volume control
         volumeOn.setOnClickListener(v -> {
             mediaPlayer.setVolume(0, 0);
             isMuted = true;
@@ -63,11 +80,12 @@ public class Categorypage extends AppCompatActivity {
         });
 
         volumeOff.setOnClickListener(v -> {
-            mediaPlayer.setVolume(1.0f, 1.0f);
+            mediaPlayer.setVolume(1, 1);
             isMuted = false;
             updateVolumeButtonsVisibility();
         });
 
+        // Navigation buttons
         watchVideos.setOnClickListener(v -> {
             stopMusic();
             startActivity(new Intent(Categorypage.this, VideosActivity.class));
