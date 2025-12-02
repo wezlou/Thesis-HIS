@@ -140,7 +140,7 @@
         <!-- Buttons row -->
         <LinearLayout
             android:id="@+id/choicesLayout"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:gravity="center"
@@ -148,24 +148,36 @@
 
             <ImageView
                 android:id="@+id/redbutton"
-                android:layout_width="110dp"
-                android:layout_height="110dp"
-                android:layout_margin="4dp"
+                android:layout_width="0dp"
+                android:layout_height="100dp"
+                android:layout_weight="1"
+                android:adjustViewBounds="true"
+                android:scaleType="centerInside"
+                android:layout_margin="6dp"
                 app:srcCompat="@drawable/img_34" />
+
 
             <ImageView
                 android:id="@+id/bluebutton"
-                android:layout_width="110dp"
-                android:layout_height="110dp"
-                android:layout_margin="4dp"
+                android:layout_width="0dp"
+                android:layout_height="100dp"
+                android:layout_weight="1"
+                android:adjustViewBounds="true"
+                android:scaleType="centerInside"
+                android:layout_margin="6dp"
                 app:srcCompat="@drawable/img_38" />
+
 
             <ImageView
                 android:id="@+id/pinkbutton"
-                android:layout_width="110dp"
-                android:layout_height="110dp"
-                android:layout_margin="4dp"
+                android:layout_width="0dp"
+                android:layout_height="100dp"
+                android:layout_weight="1"
+                android:adjustViewBounds="true"
+                android:scaleType="centerInside"
+                android:layout_margin="6dp"
                 app:srcCompat="@drawable/img_33" />
+
         </LinearLayout>
     </LinearLayout>
 

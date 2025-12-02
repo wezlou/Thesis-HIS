@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
@@ -85,7 +86,11 @@ public class firstActivity extends AppCompatActivity {
         for (int i = 0; i < q.getAnswers().size(); i++) {
             Question.Answer ans = q.getAnswers().get(i);
             ImageView btn = new ImageView(this);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(220, 220);
+            LinearLayout.LayoutParams params =
+                    new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            btn.setAdjustViewBounds(true);
+            btn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
             params.setMargins(16, 16, 16, 16);
             btn.setLayoutParams(params);
             btn.setPadding(16, 16, 16, 16);
