@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,7 +34,8 @@ public class Shape1Activity extends AppCompatActivity {
     private ImageView questionShape, option1, option2, option3;
     private TextView questionText;
     private ImageView settingsButton, backButton;
-
+    private ProgressBar gameProgressBar;
+    private TextView gameProgressText;
     private int currentLevel = 1;
     private int correctOptionPosition;
     private final Random random = new Random();
@@ -75,6 +77,11 @@ public class Shape1Activity extends AppCompatActivity {
         questionText = findViewById(R.id.question_shape);
         settingsButton = findViewById(R.id.settingsButton);
         backButton = findViewById(R.id.backbtn);
+
+        gameProgressBar = findViewById(R.id.gameProgressBar);
+        gameProgressText = findViewById(R.id.gameProgressText);
+        gameProgressBar.setMax(totalLevels); // Max is 15 levels
+        updateProgressBar();
 
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
 
@@ -189,7 +196,6 @@ public class Shape1Activity extends AppCompatActivity {
         stopMusic();
     }
 
-    // 🧠 Game logic
     private void loadLevel(int level) {
         if (level > questionShapes.length) {
             Intent intent = new Intent(this, ShapestotalSplash.class);
@@ -198,11 +204,24 @@ public class Shape1Activity extends AppCompatActivity {
             return;
         }
 
-        questionText.setText("What shape is this?");
-        questionShape.setImageResource(questionShapes[level - 1]);
+        questionText. setText("What shape is this?");
+        questionShape. setImageResource(questionShapes[level - 1]);
 
         int correctShapeType = correctAnswers[level - 1];
         loadOptionsByCode(correctShapeType);
+
+        updateProgressBar(); // 🎯 ADD THIS LINE
+    }
+
+    private void updateProgressBar() {
+        int progressPercentage = (currentLevel - 1) * 100 / totalLevels;
+
+        // Ensure percentage is between 0-100
+        if (progressPercentage < 0) progressPercentage = 0;
+        if (progressPercentage > 100) progressPercentage = 100;
+
+        gameProgressBar.setProgress(currentLevel - 1);
+        gameProgressText.setText(progressPercentage + "%");
     }
 
     private void loadOptionsByCode(int correctShapeType) {
