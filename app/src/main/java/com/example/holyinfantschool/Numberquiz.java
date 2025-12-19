@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.PopupMenu;
@@ -31,6 +32,10 @@ public class Numberquiz extends AppCompatActivity {
     private final Random random = new Random();
     private int currentLevel = 1;
     private int correctAnswer;
+
+    private ProgressBar gameProgressBar;
+    private TextView gameProgressText;
+    private final int totalLevels = 15;
 
     public static int totalCorrect = 0;
     public static int totalIncorrect = 0;
@@ -86,6 +91,12 @@ public class Numberquiz extends AppCompatActivity {
         backBtn = findViewById(R.id.backbtn);
         settingsButton = findViewById(R.id.settingsButton);
 
+        gameProgressBar = findViewById(R.id.gameProgressBar);
+        gameProgressText = findViewById(R.id.gameProgressText);
+
+        gameProgressBar.setMax(totalLevels);
+        updateProgressBar();
+
         totalCorrect = 0;
         totalIncorrect = 0;
 
@@ -114,6 +125,7 @@ public class Numberquiz extends AppCompatActivity {
             return;
         }
 
+        updateProgressBar();
         animalsLayer.removeAllViews();
 
         int animalIndex = level - 1;
@@ -240,6 +252,13 @@ public class Numberquiz extends AppCompatActivity {
         });
 
         animator.start();
+    }
+
+    private void updateProgressBar() {
+        int progressPercentage = (currentLevel - 1) * 100 / totalLevels;
+
+        gameProgressBar.setProgress(currentLevel - 1);
+        gameProgressText.setText(progressPercentage + "%");
     }
 
 

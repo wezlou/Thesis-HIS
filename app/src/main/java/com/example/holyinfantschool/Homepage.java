@@ -28,6 +28,9 @@ public class Homepage extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private boolean isMusicPlaying = true;
 
+    // 🔐 TEMP STUDENT PASSWORD
+    private static final String TEMP_STUDENT_PASSWORD = "student123";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,7 +57,6 @@ public class Homepage extends AppCompatActivity {
             }
         }
 
-        // No active session → show login page
         setContentView(R.layout.activity_homepage);
         initUI();
         setupUI();
@@ -62,6 +64,7 @@ public class Homepage extends AppCompatActivity {
 
     @SuppressLint("MissingInflatedId")
     private void initUI() {
+
         studentLoginBtn = findViewById(R.id.student_login);
         facultyLoginBtn = findViewById(R.id.faculty_login);
         exitBtn = findViewById(R.id.exit);
@@ -87,7 +90,6 @@ public class Homepage extends AppCompatActivity {
         closeStudentOverlay = findViewById(R.id.closeStudentOverlay);
         closeFacultyOverlay = findViewById(R.id.closeFacultyOverlay);
 
-        // BACKGROUND MUSIC
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
@@ -121,14 +123,25 @@ public class Homepage extends AppCompatActivity {
         closeStudentOverlay.setOnClickListener(v -> studentOverlay.setVisibility(View.GONE));
         closeFacultyOverlay.setOnClickListener(v -> facultyOverlay.setVisibility(View.GONE));
 
-        forgotStudentPassword.setOnClickListener(v -> sendResetLink(studentEmail.getText().toString()));
-        forgotFacultyPassword.setOnClickListener(v -> sendResetLink(facultyEmail.getText().toString()));
+        forgotStudentPassword.setOnClickListener(v ->
+                sendResetLink(studentEmail.getText().toString()));
+
+        forgotFacultyPassword.setOnClickListener(v ->
+                sendResetLink(facultyEmail.getText().toString()));
 
         studentLoginConfirm.setOnClickListener(v ->
-                handleLogin(studentEmail.getText().toString(), studentPassword.getText().toString(), true));
+                handleLogin(
+                        studentEmail.getText().toString(),
+                        studentPassword.getText().toString(),
+                        true
+                ));
 
         facultyLoginConfirm.setOnClickListener(v ->
-                handleLogin(facultyEmail.getText().toString(), facultyPassword.getText().toString(), false));
+                handleLogin(
+                        facultyEmail.getText().toString(),
+                        facultyPassword.getText().toString(),
+                        false
+                ));
 
         exitBtn.setOnClickListener(v -> finishAffinity());
     }
@@ -141,12 +154,26 @@ public class Homepage extends AppCompatActivity {
 
         firebaseAuth.sendPasswordResetEmail(email)
                 .addOnSuccessListener(aVoid ->
-                        Toast.makeText(this, "Reset link sent to email.", Toast.LENGTH_SHORT).show())
+                        Toast.makeText(this, "Reset link sent.", Toast.LENGTH_SHORT).show())
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void handleLogin(String email, String password, boolean isStudentLogin) {
+
+        // ✅ TEMP STUDENT ACCESS (NO FIREBASE)
+        if (isStudentLogin && password.equals(TEMP_STUDENT_PASSWORD)) {
+
+            getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                    .edit()
+                    .putString("user_role", "student")
+                    .apply();
+
+            Toast.makeText(this, "Student Access Granted", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, Categorypage.class));
+            finish();
+            return;
+        }
 
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
             Toast.makeText(this, "Please enter email and password.", Toast.LENGTH_SHORT).show();
@@ -170,9 +197,9 @@ public class Homepage extends AppCompatActivity {
 
                                 if (query.isEmpty()) {
                                     Toast.makeText(this,
-                                            isStudentLogin ?
-                                                    "This account is not registered as a student." :
-                                                    "This account is not registered as a teacher.",
+                                            isStudentLogin
+                                                    ? "Not registered as student."
+                                                    : "Not registered as faculty.",
                                             Toast.LENGTH_SHORT).show();
                                     firebaseAuth.signOut();
                                     return;
@@ -180,25 +207,18 @@ public class Homepage extends AppCompatActivity {
 
                                 DocumentSnapshot doc = query.getDocuments().get(0);
 
-                                boolean isArchived = doc.getBoolean("isArchived") != null &&
-                                        doc.getBoolean("isArchived");
-
+                                boolean isArchived = Boolean.TRUE.equals(doc.getBoolean("isArchived"));
                                 boolean isActive = doc.getBoolean("isActive") == null ||
-                                        doc.getBoolean("isActive");
+                                        Boolean.TRUE.equals(doc.getBoolean("isActive"));
 
-                                if (isArchived) {
-                                    Toast.makeText(this, "Your account is archived.", Toast.LENGTH_LONG).show();
+                                if (isArchived || !isActive) {
+                                    Toast.makeText(this,
+                                            "Account not accessible.",
+                                            Toast.LENGTH_LONG).show();
                                     firebaseAuth.signOut();
                                     return;
                                 }
 
-                                if (!isActive) {
-                                    Toast.makeText(this, "Your account is not active.", Toast.LENGTH_LONG).show();
-                                    firebaseAuth.signOut();
-                                    return;
-                                }
-
-                                // SAVE ROLE LOCALLY
                                 getSharedPreferences("HIS_APP", MODE_PRIVATE)
                                         .edit()
                                         .putString("user_role", isStudentLogin ? "student" : "faculty")

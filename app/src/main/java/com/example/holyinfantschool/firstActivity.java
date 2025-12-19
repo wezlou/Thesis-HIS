@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,8 +23,10 @@ public class firstActivity extends AppCompatActivity {
     private TextView questionText;
     private ImageView artImage;
     private LinearLayout choicesLayout;
+    private ProgressBar gameProgressBar;
+    private TextView gameProgressText;
+    private final int totalLevels = 15;
 
-    // 🎵 Music
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false;
     private boolean isPausedBySystem = false;
@@ -36,6 +39,11 @@ public class firstActivity extends AppCompatActivity {
         questionText = findViewById(R.id.questionText);
         artImage = findViewById(R.id.appleImage);
         choicesLayout = findViewById(R.id.choicesLayout);
+        gameProgressBar = findViewById(R.id.gameProgressBar);
+        gameProgressText = findViewById(R.id.gameProgressText);
+
+        gameProgressBar.setMax(totalLevels);
+        updateProgressBar();
 
         ImageView backBtn = findViewById(R.id.backbtn);
         ImageView settingsBtn = findViewById(R.id.settingsButton);
@@ -75,6 +83,7 @@ public class firstActivity extends AppCompatActivity {
             return;
         }
 
+        updateProgressBar();
         Question q = questions.get(currentIndex);
 
         questionText.setText(q.getText());
@@ -132,7 +141,16 @@ public class firstActivity extends AppCompatActivity {
         }
     }
 
-    // 🎨 Color Mapping
+    private void updateProgressBar() {
+        int progressPercentage = (currentIndex) * 100 / totalLevels;
+
+        if (progressPercentage < 0) progressPercentage = 0;
+        if (progressPercentage > 100) progressPercentage = 100;
+
+        gameProgressBar.setProgress(currentIndex);
+        gameProgressText.setText(progressPercentage + "%");
+    }
+
     private int getColorFromRes(int resId) {
         if (resId == R.drawable.img_34) return android.R.color.holo_red_dark;
         else if (resId == R.drawable.img_38) return android.R.color.holo_blue_dark;
@@ -145,9 +163,6 @@ public class firstActivity extends AppCompatActivity {
         else return android.R.color.black;
     }
 
-    // -------------------------------------------------------
-    // 🎵 MUSIC HANDLING
-    // -------------------------------------------------------
     private void setupMusic() {
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
