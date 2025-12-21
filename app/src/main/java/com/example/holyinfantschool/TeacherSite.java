@@ -24,49 +24,46 @@ public class TeacherSite extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_teacher_site);
 
-        // Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // Views
         ImageView taskBtn = findViewById(R.id.taskbtn);
-        ImageView backTeacher = findViewById(R.id.backteacher); // now logout button
+        ImageView backTeacher = findViewById(R.id.backteacher);
+        ImageView storyBtn = findViewById(R.id.storybtn);
         ImageView teacherSetting = findViewById(R.id.teachersetting);
         volumeOn = findViewById(R.id.volumeOn);
         volumeOff = findViewById(R.id.volumeOff);
 
         hideSettingsButtons();
 
-        // Background Music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // Go to Tasks
         taskBtn.setOnClickListener(v -> {
             startActivity(new Intent(TeacherSite.this, TaskSplash.class));
             finish();
         });
 
-        // LOGOUT BUTTON
+        storyBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(TeacherSite.this, ManageStoriesActivity.class);
+            startActivity(intent);
+        });
+
         backTeacher.setOnClickListener(v -> {
 
-            // 1. Firebase logout
             FirebaseAuth.getInstance().signOut();
 
-            // 2. Remove saved role
             getSharedPreferences("HIS_APP", MODE_PRIVATE)
                     .edit()
                     .remove("user_role")
                     .apply();
 
-            // 3. Stop music
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
                 mediaPlayer = null;
             }
 
-            // 4. Redirect to Homepage
             Intent intent = new Intent(TeacherSite.this, Homepage.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
                     Intent.FLAG_ACTIVITY_NEW_TASK |
@@ -77,7 +74,6 @@ public class TeacherSite extends AppCompatActivity {
             Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
         });
 
-        // Settings toggle
         teacherSetting.setOnClickListener(v -> {
             if (settingsVisible) {
                 hideSettingsButtons();
@@ -87,7 +83,6 @@ public class TeacherSite extends AppCompatActivity {
             settingsVisible = !settingsVisible;
         });
 
-        // Volume buttons
         volumeOn.setOnClickListener(v -> {
             mediaPlayer.setVolume(0, 0);
             isMuted = true;
