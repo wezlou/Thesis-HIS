@@ -58,12 +58,10 @@ public class ManageStoriesActivity extends AppCompatActivity {
         uploadNote = findViewById(R.id.uploadNote);
         backBtn = findViewById(R.id.backBtn);
 
-        // 🌸 Candy background
         getWindow().getDecorView().setBackgroundColor(
                 getResources().getColor(R.color.candy_bg)
         );
 
-        // 🍬 Buttons
         addStoryBtn.setBackgroundTintList(ColorStateList.valueOf(
                 getResources().getColor(R.color.candy_pink)));
         addStoryBtn.setTextColor(Color.WHITE);
