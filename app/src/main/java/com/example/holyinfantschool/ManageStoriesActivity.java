@@ -1,10 +1,13 @@
 package com.example.holyinfantschool;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -17,7 +20,6 @@ import java.util.Map;
 
 public class ManageStoriesActivity extends AppCompatActivity {
 
-    // Form Views
     private EditText inputTitle, inputContent;
     private Spinner categorySpinner;
     private Button uploadImageBtn, saveStoryBtn, addStoryBtn, cancelBtn;
@@ -26,10 +28,8 @@ public class ManageStoriesActivity extends AppCompatActivity {
     private ProgressBar uploadProgress;
     private TextView uploadNote;
 
-    // Firebase
     private FirebaseFirestore db;
 
-    // State
     private String uploadedImageUrl = null;
     private String editingStoryId = null;
 
@@ -42,10 +42,8 @@ public class ManageStoriesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_manage_stories);
 
-        // Firebase
         db = FirebaseFirestore.getInstance();
 
-        // Bind views
         inputTitle = findViewById(R.id.inputTitle);
         inputContent = findViewById(R.id.inputContent);
         categorySpinner = findViewById(R.id.categorySpinner);
@@ -60,35 +58,48 @@ public class ManageStoriesActivity extends AppCompatActivity {
         uploadNote = findViewById(R.id.uploadNote);
         backBtn = findViewById(R.id.backBtn);
 
-        // Spinner
+        // 🌸 Candy background
+        getWindow().getDecorView().setBackgroundColor(
+                getResources().getColor(R.color.candy_bg)
+        );
+
+        // 🍬 Buttons
+        addStoryBtn.setBackgroundTintList(ColorStateList.valueOf(
+                getResources().getColor(R.color.candy_pink)));
+        addStoryBtn.setTextColor(Color.WHITE);
+
+        saveStoryBtn.setBackgroundTintList(ColorStateList.valueOf(
+                getResources().getColor(R.color.candy_dark)));
+        saveStoryBtn.setTextColor(Color.WHITE);
+
+        uploadImageBtn.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
+        uploadImageBtn.setTextColor(
+                getResources().getColor(R.color.candy_pink_dark));
+
+        cancelBtn.setBackgroundTintList(ColorStateList.valueOf(Color.LTGRAY));
+        cancelBtn.setTextColor(Color.DKGRAY);
+
         categorySpinner.setAdapter(new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_dropdown_item,
                 categories
         ));
 
-        // Back
         backBtn.setOnClickListener(v -> finish());
 
-        // Add Story button
         addStoryBtn.setOnClickListener(v -> {
             storyForm.setVisibility(View.VISIBLE);
             addStoryBtn.setVisibility(View.GONE);
         });
 
-        // Cancel
         cancelBtn.setOnClickListener(v -> resetForm());
 
-        // Upload Image
         uploadImageBtn.setOnClickListener(v -> pickImage());
 
-        // Save / Update
         saveStoryBtn.setOnClickListener(v -> saveStory());
 
         loadStories();
     }
-
-    // ================= IMAGE PICK =================
 
     private void pickImage() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -131,8 +142,6 @@ public class ManageStoriesActivity extends AppCompatActivity {
         }
     }
 
-    // ================= SAVE / UPDATE =================
-
     private void saveStory() {
         String title = inputTitle.getText().toString().trim();
         String content = inputContent.getText().toString().trim();
@@ -173,8 +182,6 @@ public class ManageStoriesActivity extends AppCompatActivity {
         saveStoryBtn.setText("Save Story");
     }
 
-    // ================= LOAD STORIES =================
-
     private void loadStories() {
         storyListContainer.removeAllViews();
 
@@ -191,13 +198,17 @@ public class ManageStoriesActivity extends AppCompatActivity {
     private void addStoryItem(DocumentSnapshot doc) {
         LinearLayout item = new LinearLayout(this);
         item.setOrientation(LinearLayout.VERTICAL);
-        item.setPadding(24, 24, 24, 24);
-        item.setBackgroundResource(android.R.drawable.dialog_holo_light_frame);
+        item.setPadding(32, 32, 32, 32);
+        item.setBackgroundColor(
+                getResources().getColor(R.color.candy_card));
+        item.setElevation(10f);
 
         TextView title = new TextView(this);
         title.setText(doc.getString("title"));
         title.setTextSize(18);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
+        title.setTextColor(
+                getResources().getColor(R.color.candy_pink_dark));
 
         ImageView image = new ImageView(this);
         image.setLayoutParams(new LinearLayout.LayoutParams(
@@ -206,10 +217,15 @@ public class ManageStoriesActivity extends AppCompatActivity {
         Glide.with(this).load(doc.getString("imageUrl")).into(image);
 
         Button editBtn = new Button(this);
-        editBtn.setText("Edit");
+        editBtn.setText("✏️ Edit");
+        editBtn.setBackgroundTintList(ColorStateList.valueOf(
+                getResources().getColor(R.color.candy_pink)));
+        editBtn.setTextColor(Color.WHITE);
 
         Button deleteBtn = new Button(this);
-        deleteBtn.setText("Delete");
+        deleteBtn.setText("🗑 Delete");
+        deleteBtn.setBackgroundTintList(ColorStateList.valueOf(Color.LTGRAY));
+        deleteBtn.setTextColor(Color.DKGRAY);
 
         editBtn.setOnClickListener(v -> editStory(doc));
         deleteBtn.setOnClickListener(v -> deleteStory(doc.getId()));
@@ -221,8 +237,6 @@ public class ManageStoriesActivity extends AppCompatActivity {
 
         storyListContainer.addView(item);
     }
-
-    // ================= EDIT =================
 
     private void editStory(DocumentSnapshot doc) {
         editingStoryId = doc.getId();
@@ -237,8 +251,6 @@ public class ManageStoriesActivity extends AppCompatActivity {
         addStoryBtn.setVisibility(View.GONE);
         saveStoryBtn.setText("Update Story");
     }
-
-    // ================= DELETE =================
 
     private void deleteStory(String id) {
         new AlertDialog.Builder(this)
