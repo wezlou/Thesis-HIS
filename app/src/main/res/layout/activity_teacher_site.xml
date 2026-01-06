@@ -9,6 +9,18 @@
     tools:context=".TeacherSite">
 
     <ImageView
+        android:id="@+id/storybtn"
+        android:layout_width="200dp"
+        android:layout_height="150dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.924"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.468"
+        app:srcCompat="@drawable/story" />
+
+    <ImageView
         android:id="@+id/backteacher"
         android:layout_width="80dp"
         android:layout_height="80dp"
@@ -21,44 +33,16 @@
         app:srcCompat="@drawable/img_15" />
 
     <ImageView
-        android:id="@+id/aaa5"
-        android:layout_width="190dp"
-        android:layout_height="180dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.499"
-        app:srcCompat="@drawable/br" />
-
-    <ImageView
         android:id="@+id/taskbtn"
-        android:layout_width="160dp"
-        android:layout_height="112dp"
+        android:layout_width="200dp"
+        android:layout_height="150dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.509"
+        app:layout_constraintHorizontal_bias="0.075"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.518"
-        app:srcCompat="@drawable/brighter_yellow_image" />
-
-    <TextView
-        android:id="@+id/textView44"
-        android:layout_width="172dp"
-        android:layout_height="60dp"
-        android:text="TASK"
-        android:textAlignment="center"
-        android:textColor="#000000"
-        android:textSize="34sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.489"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/taskbtn"
-        app:layout_constraintVertical_bias="0.051" />
+        app:layout_constraintVertical_bias="0.468"
+        app:srcCompat="@drawable/tasks" />
 
     <ImageView
         android:id="@+id/teachersetting"
@@ -92,4 +76,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/volumeOn"
         app:srcCompat="@drawable/mute" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

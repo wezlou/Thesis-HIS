@@ -46,11 +46,12 @@
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+                <action android:name="com.google.firebase.MEkSSAGING_EVENT"/>
             </intent-filter>
         </service>
 
         <activity android:name=".Numberquiz" />
+        <activity android:name=".ManageStoriesActivity" />
         <activity android:name=".TeacherMail" android:exported="false"/>
         <activity android:name=".TeacherCompletedTask" android:exported="false"/>
         <activity android:name=".TaskCompleteSplash" android:exported="false"/>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Empty star -->
+    <item
+        android:id="@android:id/background"
+        android:drawable="@android:drawable/btn_star_big_off"/>
+
+    <!-- Half star (optional but required by system) -->
+    <item
+        android:id="@android:id/secondaryProgress"
+        android:drawable="@android:drawable/btn_star_big_on"/>
+
+    <!-- Filled star -->
+    <item
+        android:id="@android:id/progress"
+        android:drawable="@android:drawable/btn_star_big_on"/>
+</layer-list>
