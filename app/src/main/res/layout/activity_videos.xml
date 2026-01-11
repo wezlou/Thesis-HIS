@@ -112,6 +112,12 @@
                     style="@style/FilterPill"
                     android:text="Cartoons" />
 
+                <TextView
+                    android:id="@+id/filter_teachers"
+                    style="@style/FilterPill"
+                    android:text="Teacher Upload" />
+
+
             </LinearLayout>
         </HorizontalScrollView>
 

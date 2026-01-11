@@ -47,6 +47,7 @@ public class TeacherSite extends AppCompatActivity {
         ImageView backTeacher = findViewById(R.id.backteacher);
         ImageView storyBtn = findViewById(R.id.storybtn);
         ImageView teacherSetting = findViewById(R.id.teachersetting);
+        ImageView videoBtn = findViewById(R.id.videobtn);
         volumeOn = findViewById(R.id.volumeOn);
         volumeOff = findViewById(R.id.volumeOff);
 
@@ -65,9 +66,13 @@ public class TeacherSite extends AppCompatActivity {
                 startActivity(new Intent(this, ManageStoriesActivity.class))
         );
 
+        videoBtn.setOnClickListener(v ->
+                startActivity(new Intent(this, ManageVideosActivity.class))
+        );
+
+        // 🔙 Back / Logout
         backTeacher.setOnClickListener(v -> checkIfRatedThenLogout());
 
-        // ⚙ Settings
         teacherSetting.setOnClickListener(v -> {
             if (settingsVisible) hideSettingsButtons();
             else showSettingsButtons();
@@ -86,6 +91,8 @@ public class TeacherSite extends AppCompatActivity {
             updateVolumeButtonsVisibility();
         });
     }
+
+    // ================= RATING CHECK =================
 
     private void checkIfRatedThenLogout() {
 
@@ -144,7 +151,12 @@ public class TeacherSite extends AppCompatActivity {
                 .addOnCompleteListener(task -> performLogout());
     }
 
+    // ================= LOGOUT =================
+
     private void performLogout() {
+
+        // ✅ LOG LOGOUT (manual only)
+        saveLogoutHistory();
 
         FirebaseAuth.getInstance().signOut();
 
@@ -165,6 +177,23 @@ public class TeacherSite extends AppCompatActivity {
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
     }
 
+    private void saveLogoutHistory() {
+
+        if (mAuth.getCurrentUser() == null) return;
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", "logout");
+        data.put("uid", mAuth.getCurrentUser().getUid());
+        data.put("email", mAuth.getCurrentUser().getEmail());
+        data.put("role", "faculty");
+        data.put("loginType", "firebase");
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("auth_history").add(data);
+    }
+
+    // ================= UI HELPERS =================
 
     private void hideSettingsButtons() {
         volumeOn.setVisibility(View.GONE);

@@ -17,12 +17,19 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class VideosActivity extends AppCompatActivity {
 
@@ -35,9 +42,7 @@ public class VideosActivity extends AppCompatActivity {
 
     private RequestQueue requestQueue;
 
-    // Keep your API key secure in production (don't hardcode).
-    private static final String YT_API_KEY =
-            "AIzaSyDV4iG86oIUQNhKpNAOw02M11zJA8WwIiI";
+    private static final String YT_API_KEY = "AIzaSyDV4iG86oIUQNhKpNAOw02M11zJA8WwIiI";
 
     private List<VideoItem> videoList = new ArrayList<>();
     private VideoAdapter adapter;
@@ -46,10 +51,20 @@ public class VideosActivity extends AppCompatActivity {
     private String nextPageToken = "";
     private String query = "colors for kids";
 
+    private static final int MODE_YOUTUBE = 0;
+    private static final int MODE_TEACHERS = 1;
+    private int currentMode = MODE_YOUTUBE;
+
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videos);
+
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         recyclerView = findViewById(R.id.videoRecyclerView);
         backButton = findViewById(R.id.backbtn);
@@ -65,11 +80,48 @@ public class VideosActivity extends AppCompatActivity {
         loadYouTubeVideos();
     }
 
-    // -------------------------------------------------------
-    // FETCH YOUTUBE VIDEOS
-    // -------------------------------------------------------
+    private void saveLogoutAndExit() {
+
+        String uid = auth.getCurrentUser() != null
+                ? auth.getCurrentUser().getUid()
+                : getSharedPreferences("HIS_APP", MODE_PRIVATE).getString("last_uid", null);
+
+        String email = auth.getCurrentUser() != null
+                ? auth.getCurrentUser().getEmail()
+                : getSharedPreferences("HIS_APP", MODE_PRIVATE).getString("last_email", null);
+
+        if (uid == null) {
+            FirebaseAuth.getInstance().signOut();
+            stopMusic();
+            finishAffinity();
+            return;
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", "logout");
+        data.put("uid", uid);
+        data.put("email", email);
+        data.put("role", getSharedPreferences("HIS_APP", MODE_PRIVATE).getString("user_role", "student"));
+        data.put("loginType", "firebase");
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("auth_history")
+                .add(data)
+                .addOnCompleteListener(task -> {
+                    FirebaseAuth.getInstance().signOut();
+                    getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                            .edit()
+                            .remove("session_id")
+                            .remove("user_role")
+                            .apply();
+                    stopMusic();
+                    finishAffinity();
+                });
+    }
+
     private void loadYouTubeVideos() {
-        if (isLoading) return;
+        if (isLoading || currentMode != MODE_YOUTUBE) return;
         isLoading = true;
 
         String url = "https://www.googleapis.com/youtube/v3/search"
@@ -81,11 +133,11 @@ public class VideosActivity extends AppCompatActivity {
                 + "&q=" + Uri.encode(query)
                 + "&pageToken=" + nextPageToken;
 
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.GET, url, null,
                 response -> {
                     try {
                         nextPageToken = response.optString("nextPageToken", "");
-
                         JSONArray items = response.getJSONArray("items");
 
                         for (int i = 0; i < items.length(); i++) {
@@ -96,14 +148,10 @@ public class VideosActivity extends AppCompatActivity {
                             String videoId = idObj.getString("videoId");
                             JSONObject snippet = item.getJSONObject("snippet");
                             String title = snippet.optString("title", "Untitled");
-                            // thumbnail fallback safe access
-                            String thumb = snippet
-                                    .getJSONObject("thumbnails")
-                                    .optJSONObject("high") != null
-                                    ? snippet.getJSONObject("thumbnails").getJSONObject("high").optString("url", "")
-                                    : snippet.getJSONObject("thumbnails").optJSONObject("default") != null
-                                    ? snippet.getJSONObject("thumbnails").getJSONObject("default").optString("url", "")
-                                    : "";
+
+                            String thumb = snippet.getJSONObject("thumbnails")
+                                    .getJSONObject("high")
+                                    .optString("url", "");
 
                             videoList.add(new VideoItem(thumb, videoId, title));
                         }
@@ -124,10 +172,26 @@ public class VideosActivity extends AppCompatActivity {
         requestQueue.add(request);
     }
 
+    private void loadTeacherVideos() {
+        FirebaseFirestore.getInstance()
+                .collection("videos")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(qs -> {
+                    for (DocumentSnapshot doc : qs) {
+                        String title = doc.getString("title");
+                        String url = doc.getString("videoUrl");
+                        if (url != null && !url.isEmpty()) {
+                            videoList.add(new VideoItem(title, url));
+                        }
+                    }
+                    adapter.notifyDataSetChanged();
+                });
+    }
+
     private void setupRecycler() {
         adapter = new VideoAdapter(this, videoList, videoId -> {
-            // open dedicated player activity (clean)
-            Intent i = new Intent(VideosActivity.this, VideoPlayerActivity.class);
+            Intent i = new Intent(this, VideoPlayerActivity.class);
             i.putExtra("videoId", videoId);
             startActivity(i);
         });
@@ -138,11 +202,9 @@ public class VideosActivity extends AppCompatActivity {
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
-                super.onScrolled(rv, dx, dy);
-
                 LinearLayoutManager lm = (LinearLayoutManager) rv.getLayoutManager();
-
-                if (!isLoading && lm != null &&
+                if (!isLoading && currentMode == MODE_YOUTUBE &&
+                        lm != null &&
                         lm.findLastVisibleItemPosition() >= videoList.size() - 2) {
                     loadYouTubeVideos();
                 }
@@ -151,15 +213,23 @@ public class VideosActivity extends AppCompatActivity {
     }
 
     private void setupFilters() {
-        findViewById(R.id.filter_colors).setOnClickListener(v -> applyFilter("colors"));
-        findViewById(R.id.filter_alphabets).setOnClickListener(v -> applyFilter("alphabets"));
-        findViewById(R.id.filter_numbers).setOnClickListener(v -> applyFilter("numbers"));
-        findViewById(R.id.filter_animals).setOnClickListener(v -> applyFilter("animals"));
-        findViewById(R.id.filter_songs).setOnClickListener(v -> applyFilter("kids songs"));
-        findViewById(R.id.filter_cartoons).setOnClickListener(v -> applyFilter("cartoons"));
+        findViewById(R.id.filter_teachers).setOnClickListener(v -> {
+            currentMode = MODE_TEACHERS;
+            videoList.clear();
+            adapter.notifyDataSetChanged();
+            loadTeacherVideos();
+        });
+
+        findViewById(R.id.filter_colors).setOnClickListener(v -> applyYouTubeFilter("colors"));
+        findViewById(R.id.filter_alphabets).setOnClickListener(v -> applyYouTubeFilter("alphabets"));
+        findViewById(R.id.filter_numbers).setOnClickListener(v -> applyYouTubeFilter("numbers"));
+        findViewById(R.id.filter_animals).setOnClickListener(v -> applyYouTubeFilter("animals"));
+        findViewById(R.id.filter_songs).setOnClickListener(v -> applyYouTubeFilter("kids songs"));
+        findViewById(R.id.filter_cartoons).setOnClickListener(v -> applyYouTubeFilter("cartoons"));
     }
 
-    private void applyFilter(String keyword) {
+    private void applyYouTubeFilter(String keyword) {
+        currentMode = MODE_YOUTUBE;
         query = keyword + " for kids";
         nextPageToken = "";
         videoList.clear();
@@ -168,10 +238,9 @@ public class VideosActivity extends AppCompatActivity {
     }
 
     private void setupButtons() {
-
         backButton.setOnClickListener(v -> {
             stopMusic();
-            startActivity(new Intent(VideosActivity.this, Categorypage.class));
+            startActivity(new Intent(this, Categorypage.class));
             finish();
         });
 
@@ -185,22 +254,14 @@ public class VideosActivity extends AppCompatActivity {
 
         popupMenu.setOnMenuItemClickListener(item -> {
             String title = item.getTitle().toString();
-
             if (title.contains("Mute")) muteMusic();
             else if (title.contains("Unmute")) unmuteMusic();
-            else if (title.contains("Exit")) {
-                stopMusic();
-                finishAffinity();
-            }
+            else saveLogoutAndExit();
             return true;
         });
-
         popupMenu.show();
     }
 
-    // -------------------------------------------------------
-    // MUSIC HANDLING
-    // -------------------------------------------------------
     private void setupMusic() {
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);

@@ -13,7 +13,13 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class firstActivity extends AppCompatActivity {
 
@@ -31,10 +37,16 @@ public class firstActivity extends AppCompatActivity {
     private boolean isMuted = false;
     private boolean isPausedBySystem = false;
 
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_first);
+
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         questionText = findViewById(R.id.questionText);
         artImage = findViewById(R.id.appleImage);
@@ -48,22 +60,17 @@ public class firstActivity extends AppCompatActivity {
         ImageView backBtn = findViewById(R.id.backbtn);
         ImageView settingsBtn = findViewById(R.id.settingsButton);
 
-        // 🎵 Start music
         setupMusic();
 
-        // 🔙 Back button
         backBtn.setOnClickListener(v -> {
             stopMusic();
             GameSession.setQuestions(QuestionBank.getShuffledQuestions());
-            Intent intent = new Intent(this, QuizActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, QuizActivity.class));
             finish();
         });
 
-        // ⚙️ Settings menu
         settingsBtn.setOnClickListener(v -> showSettingsMenu(settingsBtn));
 
-        // Load question index
         currentIndex = getIntent().getIntExtra("CURRENT_INDEX", 0);
 
         if (GameSession.getQuestions() == null) {
@@ -74,11 +81,32 @@ public class firstActivity extends AppCompatActivity {
         showQuestion();
     }
 
+    private void saveLogoutHistory() {
+
+        String uid = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_uid", null);
+
+        String email = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_email", null);
+
+        if (uid == null) return;
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", "logout");
+        data.put("uid", uid);
+        data.put("email", email);
+        data.put("role", "student");
+        data.put("loginType", "firebase");
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("auth_history").add(data);
+    }
+
     private void showQuestion() {
         if (currentIndex >= questions.size()) {
             stopMusic();
-            Intent intent = new Intent(this, finalscorecolorsplash.class);
-            startActivity(intent);
+            startActivity(new Intent(this, finalscorecolorsplash.class));
             finish();
             return;
         }
@@ -95,13 +123,14 @@ public class firstActivity extends AppCompatActivity {
         for (int i = 0; i < q.getAnswers().size(); i++) {
             Question.Answer ans = q.getAnswers().get(i);
             ImageView btn = new ImageView(this);
+
             LinearLayout.LayoutParams params =
                     new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            params.setMargins(16, 16, 16, 16);
+
+            btn.setLayoutParams(params);
             btn.setAdjustViewBounds(true);
             btn.setScaleType(ImageView.ScaleType.FIT_CENTER);
-
-            params.setMargins(16, 16, 16, 16);
-            btn.setLayoutParams(params);
             btn.setPadding(16, 16, 16, 16);
             btn.setImageResource(ans.getImageRes());
 
@@ -115,16 +144,6 @@ public class firstActivity extends AppCompatActivity {
                             PorterDuff.Mode.SRC_ATOP);
                 } else {
                     btn.setBackgroundResource(R.drawable.answer_outline_wrong);
-                    btn.setColorFilter(getResources().getColor(getColorFromRes(ans.getImageRes())),
-                            PorterDuff.Mode.SRC_ATOP);
-
-                    for (int j = 0; j < choicesLayout.getChildCount(); j++) {
-                        Question.Answer checkAns = q.getAnswers().get(j);
-                        if (checkAns.isCorrect() && choicesLayout.getChildAt(j) instanceof ImageView) {
-                            ImageView correctBtn = (ImageView) choicesLayout.getChildAt(j);
-                            correctBtn.setBackgroundResource(R.drawable.answer_outline_correct);
-                        }
-                    }
                 }
 
                 GameFlowController.navigateToResult(
@@ -142,11 +161,7 @@ public class firstActivity extends AppCompatActivity {
     }
 
     private void updateProgressBar() {
-        int progressPercentage = (currentIndex) * 100 / totalLevels;
-
-        if (progressPercentage < 0) progressPercentage = 0;
-        if (progressPercentage > 100) progressPercentage = 100;
-
+        int progressPercentage = (currentIndex * 100) / totalLevels;
         gameProgressBar.setProgress(currentIndex);
         gameProgressText.setText(progressPercentage + "%");
     }
@@ -211,9 +226,6 @@ public class firstActivity extends AppCompatActivity {
         stopMusic();
     }
 
-    // -------------------------------------------------------
-    // ⚙️ SETTINGS MENU
-    // -------------------------------------------------------
     private void showSettingsMenu(ImageView anchor) {
         PopupMenu popupMenu = new PopupMenu(this, anchor);
         popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
@@ -225,6 +237,17 @@ public class firstActivity extends AppCompatActivity {
             if (title.contains("Mute")) muteMusic();
             else if (title.contains("Unmute")) unmuteMusic();
             else if (title.contains("Exit")) {
+
+                saveLogoutHistory();
+
+                FirebaseAuth.getInstance().signOut();
+
+                getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                        .edit()
+                        .remove("session_id")
+                        .remove("user_role")
+                        .apply();
+
                 stopMusic();
                 finishAffinity();
             }

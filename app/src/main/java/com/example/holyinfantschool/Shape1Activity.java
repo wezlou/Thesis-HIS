@@ -16,14 +16,19 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class Shape1Activity extends AppCompatActivity {
@@ -36,17 +41,19 @@ public class Shape1Activity extends AppCompatActivity {
     private ImageView settingsButton, backButton;
     private ProgressBar gameProgressBar;
     private TextView gameProgressText;
+
     private int currentLevel = 1;
     private int correctOptionPosition;
     private final Random random = new Random();
 
     private MediaPlayer mediaPlayer;
     private boolean isMuted = false;
-    private boolean isPausedBySystem = false;
 
     private final int totalLevels = 15;
 
-    // 🎨 Question and Answer Setup
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+
     private int[] questionShapes = {
             R.drawable.shape_q1, R.drawable.shape_q2, R.drawable.shape_q3,
             R.drawable.shape_q4, R.drawable.shape_q5, R.drawable.shape_q6,
@@ -64,12 +71,25 @@ public class Shape1Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_shape1);
 
-        // 🎵 Start background music
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // 🔗 Bind views
+        bindViews();
+        setupButtons();
+
+        shuffleQuestions();
+
+        totalCorrect = 0;
+        totalIncorrect = 0;
+        currentLevel = 1;
+        loadLevel(currentLevel);
+    }
+
+    private void bindViews() {
         questionShape = findViewById(R.id.b2);
         option1 = findViewById(R.id.circle);
         option2 = findViewById(R.id.triangle);
@@ -77,102 +97,109 @@ public class Shape1Activity extends AppCompatActivity {
         questionText = findViewById(R.id.question_shape);
         settingsButton = findViewById(R.id.settingsButton);
         backButton = findViewById(R.id.backbtn);
-
         gameProgressBar = findViewById(R.id.gameProgressBar);
         gameProgressText = findViewById(R.id.gameProgressText);
-        gameProgressBar.setMax(totalLevels); // Max is 15 levels
-        updateProgressBar();
 
-        settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
+        gameProgressBar.setMax(totalLevels);
 
-        backButton.setOnClickListener(v -> {
-            stopMusic();
-            Intent intent = new Intent(this, QuizActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            finish();
-        });
-
-        // 🎲 Shuffle questions
-        List<int[]> questionPairs = new ArrayList<>();
-        for (int i = 0; i < questionShapes.length; i++) {
-            questionPairs.add(new int[]{questionShapes[i], correctAnswers[i]});
-        }
-        Collections.shuffle(questionPairs);
-
-        for (int i = 0; i < questionPairs.size(); i++) {
-            questionShapes[i] = questionPairs.get(i)[0];
-            correctAnswers[i] = questionPairs.get(i)[1];
-        }
-
-        totalCorrect = 0;
-        totalIncorrect = 0;
-        currentLevel = 1;
-        loadLevel(currentLevel);
-
-        // 🧩 Option click listeners
         option1.setOnClickListener(v -> checkAnswer(1));
         option2.setOnClickListener(v -> checkAnswer(2));
         option3.setOnClickListener(v -> checkAnswer(3));
     }
 
-    // ⚙️ Settings menu
-    private void showSettingsMenu(ImageView anchor) {
-        PopupMenu popupMenu = new PopupMenu(this, anchor);
-        popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
-        popupMenu.getMenu().add("Exit ❌");
+    private void setupButtons() {
 
-        popupMenu.setOnMenuItemClickListener(item -> {
+        settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
+
+        backButton.setOnClickListener(v -> {
+            handleLogoutAndExit(false);
+            startActivity(new Intent(this, QuizActivity.class));
+            finish();
+        });
+    }
+
+    private void saveLogoutHistory() {
+
+        String uid = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_uid", null);
+
+        String email = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_email", null);
+
+        if (uid == null) return;
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", "logout");
+        data.put("uid", uid);
+        data.put("email", email);
+        data.put("role", "student");
+        data.put("loginType", "firebase");
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        FirebaseFirestore.getInstance()
+                .collection("auth_history")
+                .add(data);
+    }
+
+    private void handleLogoutAndExit(boolean closeApp) {
+
+        saveLogoutHistory();
+
+        FirebaseAuth.getInstance().signOut();
+
+        getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .edit()
+                .remove("session_id")
+                .apply();
+
+        stopMusic();
+
+        if (closeApp) {
+            finishAffinity();
+        }
+    }
+
+    private void showSettingsMenu(ImageView anchor) {
+        PopupMenu menu = new PopupMenu(this, anchor);
+        menu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
+        menu.getMenu().add("Exit ❌");
+
+        menu.setOnMenuItemClickListener(item -> {
+
             String title = item.getTitle().toString();
+
             if (title.contains("Mute")) {
-                muteDevice();
+                mediaPlayer.setVolume(0f, 0f);
                 isMuted = true;
-                Toast.makeText(this, "Muted 🔇", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Unmute")) {
-                unmuteDevice();
+                mediaPlayer.setVolume(1f, 1f);
                 isMuted = false;
-                Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
-            } else if (title.contains("Exit")) {
-                stopMusic();
-                finishAffinity(); // close app
+            } else {
+                handleLogoutAndExit(true);
             }
             return true;
         });
 
-        popupMenu.show();
+        menu.show();
     }
 
-    // 🔇 / 🔊 Sound controls
-    private void muteDevice() {
-        if (mediaPlayer != null) mediaPlayer.setVolume(0f, 0f);
-    }
-
-    private void unmuteDevice() {
-        if (mediaPlayer != null) {
-            mediaPlayer.setVolume(1f, 1f);
-            if (!mediaPlayer.isPlaying()) mediaPlayer.start();
+    private void shuffleQuestions() {
+        List<int[]> pairs = new ArrayList<>();
+        for (int i = 0; i < questionShapes.length; i++) {
+            pairs.add(new int[]{questionShapes[i], correctAnswers[i]});
         }
-    }
+        Collections.shuffle(pairs);
 
-    private void pauseMusic() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            isPausedBySystem = true;
-        }
-    }
-
-    private void resumeMusic() {
-        if (mediaPlayer != null && isPausedBySystem && !isMuted) {
-            try {
-                mediaPlayer.start();
-                isPausedBySystem = false;
-            } catch (IllegalStateException ignored) {}
+        for (int i = 0; i < pairs.size(); i++) {
+            questionShapes[i] = pairs.get(i)[0];
+            correctAnswers[i] = pairs.get(i)[1];
         }
     }
 
     private void stopMusic() {
         if (mediaPlayer != null) {
-            try { mediaPlayer.stop(); } catch (IllegalStateException ignored) {}
+            mediaPlayer.stop();
             mediaPlayer.release();
             mediaPlayer = null;
         }
@@ -181,19 +208,19 @@ public class Shape1Activity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        pauseMusic();
+        if (mediaPlayer != null) mediaPlayer.pause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        resumeMusic();
+        if (mediaPlayer != null && !isMuted) mediaPlayer.start();
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         stopMusic();
+        super.onDestroy();
     }
 
     private void loadLevel(int level) {
@@ -216,7 +243,6 @@ public class Shape1Activity extends AppCompatActivity {
     private void updateProgressBar() {
         int progressPercentage = (currentLevel - 1) * 100 / totalLevels;
 
-        // Ensure percentage is between 0-100
         if (progressPercentage < 0) progressPercentage = 0;
         if (progressPercentage > 100) progressPercentage = 100;
 
@@ -279,7 +305,6 @@ public class Shape1Activity extends AppCompatActivity {
         return stream.toByteArray();
     }
 
-    // 🎨 Shape drawing methods
     private Bitmap createShapeBitmap(int type) {
         int color = generateVisibleColor();
         switch (type) {

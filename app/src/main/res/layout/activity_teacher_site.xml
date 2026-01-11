@@ -9,6 +9,18 @@
     tools:context=".TeacherSite">
 
     <ImageView
+        android:id="@+id/videobtn"
+        android:layout_width="200dp"
+        android:layout_height="150dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.464"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.755"
+        app:srcCompat="@drawable/video" />
+
+    <ImageView
         android:id="@+id/storybtn"
         android:layout_width="200dp"
         android:layout_height="150dp"

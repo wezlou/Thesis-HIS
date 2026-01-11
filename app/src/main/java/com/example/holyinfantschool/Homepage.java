@@ -13,6 +13,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Homepage extends AppCompatActivity {
 
@@ -28,7 +32,6 @@ public class Homepage extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private boolean isMusicPlaying = true;
 
-    // 🔐 TEMP STUDENT PASSWORD
     private static final String TEMP_STUDENT_PASSWORD = "student123";
 
     @Override
@@ -38,7 +41,6 @@ public class Homepage extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
-        // ⭐ AUTO LOGIN CHECK ⭐
         if (firebaseAuth.getCurrentUser() != null) {
 
             String role = getSharedPreferences("HIS_APP", MODE_PRIVATE)
@@ -143,42 +145,38 @@ public class Homepage extends AppCompatActivity {
                         false
                 ));
 
-        exitBtn.setOnClickListener(v -> finishAffinity());
+        exitBtn.setOnClickListener(v -> {
+            saveAuthHistory("logout");
+            firebaseAuth.signOut();
+            finishAffinity();
+        });
     }
 
     private void sendResetLink(String email) {
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(this, "Enter email first.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (TextUtils.isEmpty(email)) return;
 
-        firebaseAuth.sendPasswordResetEmail(email)
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(this, "Reset link sent.", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show());
+        firebaseAuth.sendPasswordResetEmail(email);
     }
 
     private void handleLogin(String email, String password, boolean isStudentLogin) {
 
-        // ✅ TEMP STUDENT ACCESS (NO FIREBASE)
         if (isStudentLogin && password.equals(TEMP_STUDENT_PASSWORD)) {
 
             getSharedPreferences("HIS_APP", MODE_PRIVATE)
                     .edit()
+                    .putString("last_uid", "TEMP")
+                    .putString("last_email", "TEMP")
                     .putString("user_role", "student")
                     .apply();
 
-            Toast.makeText(this, "Student Access Granted", Toast.LENGTH_SHORT).show();
+            saveAuthHistory("login", "TEMP", "TEMP", "student", "temp");
+
             startActivity(new Intent(this, Categorypage.class));
             finish();
             return;
         }
 
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Please enter email and password.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) return;
 
         showLoading(true);
 
@@ -196,11 +194,6 @@ public class Homepage extends AppCompatActivity {
                                 showLoading(false);
 
                                 if (query.isEmpty()) {
-                                    Toast.makeText(this,
-                                            isStudentLogin
-                                                    ? "Not registered as student."
-                                                    : "Not registered as faculty.",
-                                            Toast.LENGTH_SHORT).show();
                                     firebaseAuth.signOut();
                                     return;
                                 }
@@ -212,62 +205,77 @@ public class Homepage extends AppCompatActivity {
                                         Boolean.TRUE.equals(doc.getBoolean("isActive"));
 
                                 if (isArchived || !isActive) {
-                                    Toast.makeText(this,
-                                            "Account not accessible.",
-                                            Toast.LENGTH_LONG).show();
                                     firebaseAuth.signOut();
                                     return;
                                 }
 
                                 getSharedPreferences("HIS_APP", MODE_PRIVATE)
                                         .edit()
-                                        .putString("user_role", isStudentLogin ? "student" : "faculty")
+                                        .putString("last_uid", firebaseAuth.getCurrentUser().getUid())
+                                        .putString("last_email", email)
+                                        .putString("user_role",
+                                                isStudentLogin ? "student" : "faculty")
                                         .apply();
 
-                                if (isStudentLogin) {
-                                    startActivity(new Intent(this, Categorypage.class));
-                                    Toast.makeText(this, "Welcome Student!", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    startActivity(new Intent(this, TeacherSite.class));
-                                    Toast.makeText(this, "Welcome Faculty!", Toast.LENGTH_SHORT).show();
-                                }
+                                saveAuthHistory(
+                                        "login",
+                                        firebaseAuth.getCurrentUser().getUid(),
+                                        email,
+                                        isStudentLogin ? "student" : "faculty",
+                                        "firebase"
+                                );
 
+                                startActivity(new Intent(
+                                        this,
+                                        isStudentLogin ? Categorypage.class : TeacherSite.class
+                                ));
                                 finish();
-                            })
-                            .addOnFailureListener(e -> {
-                                showLoading(false);
-                                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
                             });
-
-                })
-                .addOnFailureListener(e -> {
-                    showLoading(false);
-                    Toast.makeText(this,
-                            "Login failed: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void saveAuthHistory(
+            String action,
+            String uid,
+            String email,
+            String role,
+            String loginType
+    ) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", action);
+        data.put("uid", uid);
+        data.put("email", email);
+        data.put("role", role);
+        data.put("loginType", loginType);
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        firestore.collection("auth_history").add(data);
+    }
+
+    private void saveAuthHistory(String action) {
+
+        String uid = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_uid", null);
+
+        String email = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_email", null);
+
+        if (uid == null) return;
+
+        saveAuthHistory(
+                action,
+                uid,
+                email,
+                getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                        .getString("user_role", "unknown"),
+                "firebase"
+        );
     }
 
     private void showLoading(boolean show) {
         View loading = findViewById(R.id.loadingOverlay);
         loading.setVisibility(show ? View.VISIBLE : View.GONE);
-
-        studentLoginConfirm.setEnabled(!show);
-        facultyLoginConfirm.setEnabled(!show);
-        studentLoginBtn.setEnabled(!show);
-        facultyLoginBtn.setEnabled(!show);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (isMusicPlaying) mediaPlayer.pause();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (isMusicPlaying) mediaPlayer.start();
     }
 
     @Override
@@ -276,3 +284,4 @@ public class Homepage extends AppCompatActivity {
         if (mediaPlayer != null) mediaPlayer.release();
     }
 }
+    

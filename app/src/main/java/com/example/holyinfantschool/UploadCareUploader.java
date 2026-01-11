@@ -6,7 +6,7 @@ import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.util.Log;
 
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +18,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okio.BufferedSink;
 
 public class UploadCareUploader {
 
@@ -29,7 +30,7 @@ public class UploadCareUploader {
     // Correct Uploadcare endpoint (Signed Uploads OFF)
     private static final String UPLOAD_ENDPOINT = "https://upload.uploadcare.com/base/";
 
-    private static final int TIMEOUT = 60;
+    private static final int TIMEOUT = 300;
 
     public static String upload(Context ctx, Uri fileUri) throws Exception {
 
@@ -58,21 +59,21 @@ public class UploadCareUploader {
         String mime = ctx.getContentResolver().getType(fileUri);
         if (mime == null) mime = "application/octet-stream";
 
-        // Read bytes
+        // Open stream (USED FOR STREAMING)
         InputStream in = ctx.getContentResolver().openInputStream(fileUri);
         if (in == null)
             throw new Exception("Cannot open stream: " + fileUri);
 
-        byte[] fileBytes = readBytes(in);
-        Log.d(TAG, "Bytes read: " + fileBytes.length);
+        // ✅ ONLY CHANGE: stream instead of byte[]
+        RequestBody fileBody =
+                new StreamRequestBody(in, MediaType.parse(mime));
 
         // Prepare multipart
         RequestBody body = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("UPLOADCARE_PUB_KEY", publicKey)
                 .addFormDataPart("UPLOADCARE_STORE", "auto")
-                .addFormDataPart("file", fileName,
-                        RequestBody.create(fileBytes, MediaType.parse(mime)))
+                .addFormDataPart("file", fileName, fileBody)
                 .build();
 
         Request request = new Request.Builder()
@@ -114,7 +115,7 @@ public class UploadCareUploader {
             return cdn;
         }
 
-        // Other files → append original filename
+        // Other files (including VIDEO) → append original filename
         String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString())
                 .replace("+", "%20");
 
@@ -124,7 +125,7 @@ public class UploadCareUploader {
         return cdn;
     }
 
-    // Helpers -----------------------------------------------------
+    // ================= HELPERS =================
 
     private static String getFileName(Context ctx, Uri uri) {
         try {
@@ -140,15 +141,6 @@ public class UploadCareUploader {
             }
         } catch (Exception ignored) { }
         return uri.getLastPathSegment();
-    }
-
-    private static byte[] readBytes(InputStream in) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        byte[] buf = new byte[8192];
-        int n;
-        while ((n = in.read(buf)) != -1) bos.write(buf, 0, n);
-        in.close();
-        return bos.toByteArray();
     }
 
     private static String parseUuid(String json) {
@@ -174,5 +166,36 @@ public class UploadCareUploader {
         return ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png")
                 || ext.equals("gif") || ext.equals("webp") || ext.equals("bmp")
                 || ext.equals("heic");
+    }
+
+    // ================= STREAM BODY (VIDEO FIX) =================
+
+    private static class StreamRequestBody extends RequestBody {
+
+        private final InputStream inputStream;
+        private final MediaType contentType;
+
+        StreamRequestBody(InputStream inputStream, MediaType contentType) {
+            this.inputStream = inputStream;
+            this.contentType = contentType;
+        }
+
+        @Override
+        public MediaType contentType() {
+            return contentType;
+        }
+
+        @Override
+        public void writeTo(BufferedSink sink) throws IOException {
+            byte[] buffer = new byte[8192];
+            int read;
+            try {
+                while ((read = inputStream.read(buffer)) != -1) {
+                    sink.write(buffer, 0, read);
+                }
+            } finally {
+                inputStream.close();
+            }
+        }
     }
 }
