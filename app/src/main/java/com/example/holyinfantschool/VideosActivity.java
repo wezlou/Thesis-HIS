@@ -44,7 +44,7 @@ public class VideosActivity extends AppCompatActivity {
 
     private static final String YT_API_KEY = "AIzaSyDV4iG86oIUQNhKpNAOw02M11zJA8WwIiI";
 
-    private List<VideoItem> videoList = new ArrayList<>();
+    private final List<VideoItem> videoList = new ArrayList<>();
     private VideoAdapter adapter;
 
     private boolean isLoading = false;
@@ -81,7 +81,6 @@ public class VideosActivity extends AppCompatActivity {
     }
 
     private void saveLogoutAndExit() {
-
         String uid = auth.getCurrentUser() != null
                 ? auth.getCurrentUser().getUid()
                 : getSharedPreferences("HIS_APP", MODE_PRIVATE).getString("last_uid", null);
@@ -148,12 +147,19 @@ public class VideosActivity extends AppCompatActivity {
                             String videoId = idObj.getString("videoId");
                             JSONObject snippet = item.getJSONObject("snippet");
                             String title = snippet.optString("title", "Untitled");
-
                             String thumb = snippet.getJSONObject("thumbnails")
                                     .getJSONObject("high")
                                     .optString("url", "");
 
-                            videoList.add(new VideoItem(thumb, videoId, title));
+                            videoList.add(
+                                    new VideoItem(
+                                            VideoItem.TYPE_YOUTUBE,
+                                            title,
+                                            thumb,
+                                            videoId,
+                                            ""
+                                    )
+                            );
                         }
 
                         adapter.notifyDataSetChanged();
@@ -178,11 +184,22 @@ public class VideosActivity extends AppCompatActivity {
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(qs -> {
+                    videoList.clear();
                     for (DocumentSnapshot doc : qs) {
                         String title = doc.getString("title");
-                        String url = doc.getString("videoUrl");
-                        if (url != null && !url.isEmpty()) {
-                            videoList.add(new VideoItem(title, url));
+                        String videoUrl = doc.getString("videoUrl");
+                        String thumbnailUrl = doc.getString("thumbnailUrl");
+
+                        if (videoUrl != null && !videoUrl.isEmpty()) {
+                            videoList.add(
+                                    new VideoItem(
+                                            VideoItem.TYPE_UPLOADED,
+                                            title,
+                                            thumbnailUrl,
+                                            "",
+                                            videoUrl
+                                    )
+                            );
                         }
                     }
                     adapter.notifyDataSetChanged();

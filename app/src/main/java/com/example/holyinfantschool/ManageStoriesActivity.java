@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.*;
 
 import androidx.appcompat.app.AlertDialog;
@@ -58,10 +59,12 @@ public class ManageStoriesActivity extends AppCompatActivity {
         uploadNote = findViewById(R.id.uploadNote);
         backBtn = findViewById(R.id.backBtn);
 
+        // 🌈 Background
         getWindow().getDecorView().setBackgroundColor(
                 getResources().getColor(R.color.candy_bg)
         );
 
+        // 🎨 Buttons
         addStoryBtn.setBackgroundTintList(ColorStateList.valueOf(
                 getResources().getColor(R.color.candy_pink)));
         addStoryBtn.setTextColor(Color.WHITE);
@@ -77,11 +80,32 @@ public class ManageStoriesActivity extends AppCompatActivity {
         cancelBtn.setBackgroundTintList(ColorStateList.valueOf(Color.LTGRAY));
         cancelBtn.setTextColor(Color.DKGRAY);
 
-        categorySpinner.setAdapter(new ArrayAdapter<>(
+        // 🔒 FORCE BLACK TEXT (FORM)
+        forceBlack(inputTitle);
+        forceBlack(inputContent);
+        uploadNote.setTextColor(Color.BLACK);
+
+        // 🔽 Spinner with forced black text
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
                 this,
                 android.R.layout.simple_spinner_dropdown_item,
                 categories
-        ));
+        ) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View v = super.getView(position, convertView, parent);
+                ((TextView) v).setTextColor(Color.BLACK);
+                return v;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View v = super.getDropDownView(position, convertView, parent);
+                ((TextView) v).setTextColor(Color.BLACK);
+                return v;
+            }
+        };
+        categorySpinner.setAdapter(adapter);
 
         backBtn.setOnClickListener(v -> finish());
 
@@ -97,6 +121,12 @@ public class ManageStoriesActivity extends AppCompatActivity {
         saveStoryBtn.setOnClickListener(v -> saveStory());
 
         loadStories();
+    }
+
+    // 🔒 Helper to force readable text
+    private void forceBlack(EditText et) {
+        et.setTextColor(Color.BLACK);
+        et.setHintTextColor(Color.DKGRAY);
     }
 
     private void pickImage() {
@@ -205,8 +235,7 @@ public class ManageStoriesActivity extends AppCompatActivity {
         title.setText(doc.getString("title"));
         title.setTextSize(18);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setTextColor(
-                getResources().getColor(R.color.candy_pink_dark));
+        title.setTextColor(Color.BLACK); // 🔒 FIXED
 
         ImageView image = new ImageView(this);
         image.setLayoutParams(new LinearLayout.LayoutParams(
@@ -216,14 +245,9 @@ public class ManageStoriesActivity extends AppCompatActivity {
 
         Button editBtn = new Button(this);
         editBtn.setText("✏️ Edit");
-        editBtn.setBackgroundTintList(ColorStateList.valueOf(
-                getResources().getColor(R.color.candy_pink)));
-        editBtn.setTextColor(Color.WHITE);
 
         Button deleteBtn = new Button(this);
         deleteBtn.setText("🗑 Delete");
-        deleteBtn.setBackgroundTintList(ColorStateList.valueOf(Color.LTGRAY));
-        deleteBtn.setTextColor(Color.DKGRAY);
 
         editBtn.setOnClickListener(v -> editStory(doc));
         deleteBtn.setOnClickListener(v -> deleteStory(doc.getId()));
