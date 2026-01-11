@@ -107,6 +107,41 @@ public class studenttask extends AppCompatActivity {
         filterDocs.setOnClickListener(v -> { highlightSelected(filterDocs); loadContent("doc"); });
     }
 
+    private void saveLogoutAndExit() {
+        if (auth.getCurrentUser() == null) {
+            stopMusic();
+            finishAffinity();
+            return;
+        }
+
+        String uid = auth.getCurrentUser().getUid();
+        String email = auth.getCurrentUser().getEmail();
+        String role = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("user_role", "student");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", "logout");
+        data.put("uid", uid);
+        data.put("email", email);
+        data.put("role", role);
+        data.put("loginType", "firebase");
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("auth_history")
+                .add(data)
+                .addOnCompleteListener(task -> {
+                    auth.signOut();
+                    getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                            .edit()
+                            .remove("session_id")
+                            .remove("user_role")
+                            .apply();
+                    stopMusic();
+                    finishAffinity();
+                });
+    }
+
     private void showSettingsMenu(ImageView anchor) {
         PopupMenu popupMenu = new PopupMenu(this, anchor);
         popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
@@ -123,8 +158,7 @@ public class studenttask extends AppCompatActivity {
                 isMuted = false;
                 Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Exit")) {
-                stopMusic();
-                finishAffinity();
+                saveLogoutAndExit();
             }
             return true;
         });

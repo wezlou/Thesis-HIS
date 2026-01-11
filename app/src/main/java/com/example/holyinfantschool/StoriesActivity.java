@@ -17,10 +17,16 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.firestore.*;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StoriesActivity extends AppCompatActivity {
 
@@ -30,6 +36,7 @@ public class StoriesActivity extends AppCompatActivity {
     private Animation bounceIn;
 
     private FirebaseFirestore db;
+    private FirebaseAuth auth;
     private List<DocumentSnapshot> allStories = new ArrayList<>();
 
     @Override
@@ -38,6 +45,7 @@ public class StoriesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_stories);
 
         db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
@@ -60,7 +68,41 @@ public class StoriesActivity extends AppCompatActivity {
         loadStoriesFromFirestore();
     }
 
-    // ================= LOAD STORIES =================
+    private void saveLogoutAndExit() {
+
+        if (auth.getCurrentUser() == null) {
+            stopMusic();
+            finishAffinity();
+            return;
+        }
+
+        String uid = auth.getCurrentUser().getUid();
+        String email = auth.getCurrentUser().getEmail();
+        String role = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("user_role", "student");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", "logout");
+        data.put("uid", uid);
+        data.put("email", email);
+        data.put("role", role);
+        data.put("loginType", "firebase");
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("auth_history")
+                .add(data)
+                .addOnCompleteListener(task -> {
+                    auth.signOut();
+                    getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                            .edit()
+                            .remove("session_id")
+                            .remove("user_role")
+                            .apply();
+                    stopMusic();
+                    finishAffinity();
+                });
+    }
 
     private void loadStoriesFromFirestore() {
         db.collection("stories")
@@ -76,14 +118,11 @@ public class StoriesActivity extends AppCompatActivity {
                 );
     }
 
-    // ================= DISPLAY =================
-
     private void displayFilteredStories(String category) {
         storyContainer.removeAllViews();
 
         for (DocumentSnapshot doc : allStories) {
             String storyCategory = doc.getString("category");
-
             if (category == null || category.equals(storyCategory)) {
                 addStoryCard(
                         doc.getString("title"),
@@ -147,7 +186,7 @@ public class StoriesActivity extends AppCompatActivity {
         card.startAnimation(bounceIn);
 
         card.setOnClickListener(v -> {
-            Intent intent = new Intent(StoriesActivity.this, StoryDetailActivity.class);
+            Intent intent = new Intent(this, StoryDetailActivity.class);
             intent.putExtra("title", title);
             intent.putExtra("content", content);
             intent.putExtra("imageUrl", imageUrl);
@@ -156,8 +195,6 @@ public class StoriesActivity extends AppCompatActivity {
 
         storyContainer.addView(card);
     }
-
-    // ================= FILTERS =================
 
     private void setupFilters() {
         TextView filterAll = findViewById(R.id.filterAll);
@@ -169,7 +206,6 @@ public class StoriesActivity extends AppCompatActivity {
         View.OnClickListener listener = v -> {
             resetFilterColors();
             ((TextView) v).setBackgroundResource(R.drawable.candy_filter_tab_selected);
-
             String selected = ((TextView) v).getText().toString();
             displayFilteredStories(selected.equals("All") ? null : selected);
         };
@@ -197,8 +233,6 @@ public class StoriesActivity extends AppCompatActivity {
         }
     }
 
-    // ================= SETTINGS =================
-
     private void showSettingsMenu(ImageView anchor) {
         PopupMenu popupMenu = new PopupMenu(this, anchor);
         popupMenu.getMenu().add(isMuted ? "Unmute 🔊" : "Mute 🔇");
@@ -212,9 +246,8 @@ public class StoriesActivity extends AppCompatActivity {
             } else if (t.contains("Unmute")) {
                 unmuteDevice();
                 isMuted = false;
-            } else if (t.contains("Exit")) {
-                stopMusic();
-                finishAffinity();
+            } else {
+                saveLogoutAndExit();
             }
             return true;
         });
@@ -234,7 +267,7 @@ public class StoriesActivity extends AppCompatActivity {
 
     private void stopMusic() {
         if (mediaPlayer != null) {
-            try { mediaPlayer.stop(); } catch (Exception ignored) {}
+            mediaPlayer.stop();
             mediaPlayer.release();
             mediaPlayer = null;
         }

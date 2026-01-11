@@ -21,6 +21,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class Numberquiz extends AppCompatActivity {
 
@@ -44,6 +50,10 @@ public class Numberquiz extends AppCompatActivity {
     private MediaPlayer correctSound, incorrectSound;
     private boolean isMuted = false;
     private boolean isPausedBySystem = false;
+
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+
 
     private int[] backgrounds = {
             R.drawable.farm_bg, R.drawable.jungle_bg, R.drawable.ocean_bg,
@@ -70,13 +80,13 @@ public class Numberquiz extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.number_quiz);
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
-        // 🎵 Background Music
         mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
-        // 🔊 Feedback sounds
         correctSound = MediaPlayer.create(this, R.raw.correct);
         incorrectSound = MediaPlayer.create(this, R.raw.incorrect);
 
@@ -102,7 +112,6 @@ public class Numberquiz extends AppCompatActivity {
 
         loadLevel(currentLevel);
 
-        // 🔙 Back button
         backBtn.setOnClickListener(v -> {
             stopMusic();
             Intent intent = new Intent(this, QuizActivity.class);
@@ -115,6 +124,27 @@ public class Numberquiz extends AppCompatActivity {
         settingsButton.setOnClickListener(v -> showSettingsMenu(settingsButton));
     }
 
+    private void saveLogoutHistory() {
+
+        String uid = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_uid", null);
+
+        String email = getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                .getString("last_email", null);
+
+        if (uid == null) return;
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("action", "logout");
+        data.put("uid", uid);
+        data.put("email", email);
+        data.put("role", "student");
+        data.put("loginType", "firebase");
+        data.put("device", "Android");
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("auth_history").add(data);
+    }
 
     private void loadLevel(int level) {
         if (level > 15) {
@@ -222,7 +252,6 @@ public class Numberquiz extends AppCompatActivity {
             else if (!isCorrect && incorrectSound != null) incorrectSound.start();
         }
 
-        // 🌈 Glow color animation
         int glowColor = isCorrect ? Color.parseColor("#AA00FF00") : Color.parseColor("#AAFF0000");
 
         GradientDrawable gradient = new GradientDrawable();
@@ -278,6 +307,17 @@ public class Numberquiz extends AppCompatActivity {
                 isMuted = false;
                 Toast.makeText(this, "Unmuted 🔊", Toast.LENGTH_SHORT).show();
             } else if (title.contains("Exit")) {
+
+                saveLogoutHistory();
+
+                FirebaseAuth.getInstance().signOut();
+
+                getSharedPreferences("HIS_APP", MODE_PRIVATE)
+                        .edit()
+                        .remove("session_id")
+                        .remove("user_role")
+                        .apply();
+
                 stopMusic();
                 finishAffinity();
             }
